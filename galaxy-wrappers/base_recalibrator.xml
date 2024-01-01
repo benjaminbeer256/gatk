@@ -1,0 +1,43 @@
+<tool id="baserecalibrator" name="BaseRecalibrator" version="0.1.0+galaxy0" python_template_version="3.5" profile="21.05">
+    <description>Generates recalibration table for Base Quality Score Recalibration (BQSR)</description>
+    <command detect_errors="exit_code"><![CDATA[
+    echo "Debug Information:" >> "$output1" &&
+    echo "BAM variable is '$BAM'" >> "$output1" &&
+    echo "FASTA variable is '$FASTA'" >> "$output1" &&
+    echo "VCF variable is '$VCF'" >> "$output1" &&
+
+    ln -s '$VCF' known_sites.vcf &&
+    ln -s '$FASTA' fasta.fa &&
+    ln -s '$BAM' input.bam &&
+
+    #import subprocess
+    #set $bam_path = str($BAM)
+    #set $groups = subprocess.check_output(["samtools", "view", "-h", str($bam_path)], stderr=subprocess.STDOUT, shell=False).decode('utf-8')
+    #if "@RG" not in str($groups)
+        echo "BAM file must have read groups" &&
+        exit 1
+    #end if
+
+
+    samtools faidx fasta.fa --output fasta.fa.fai &&
+    gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict &&
+
+
+    bgzip -c known_sites.vcf > known_sites.vcf.gz &&
+    tabix -p vcf known_sites.vcf.gz && 
+
+    gatk BaseRecalibrator -I input.bam -R fasta.fa --known-sites known_sites.vcf.gz -O "$output1"
+    ]]></command>
+    <inputs>
+        <param type="data" name="BAM" format="bam,sam,cram" label="Bam, SAM, or CRAM file containing reads"/>
+        <param type="data" name="FASTA" format="fasta" label="Reference file with corresponding dictionary and index files"/>
+        <param type="data" name="VCF" format="vcf" label="Known sites"/>
+    </inputs>
+    <outputs>
+        <data name="output1" format="table" label="recalibration_report.table"/>
+    </outputs>
+    <help>
+        Generates a recalibration table based on various covariates.
+        See: https://gatk.broadinstitute.org/hc/en-us/articles/360037438491-BaseRecalibrator
+    </help>
+</tool>
