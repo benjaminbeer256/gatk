@@ -1,12 +1,15 @@
-<tool id="baserecalibrator" name="BaseRecalibrator" version="0.1.0+galaxy0" python_template_version="3.5" profile="21.05">
+<tool id="gatk4_BaseRecalibrator" name="GATK4 BaseRecalibrator" version="0.1.0+galaxy0" python_template_version="3.5" profile="21.05">
     <description>Generates recalibration table for Base Quality Score Recalibration (BQSR)</description>
+    <requirements>
+      <requirement type="package" version="4.2.6.1">gatk4</requirement>
+    </requirements>
+
     <command detect_errors="exit_code"><![CDATA[
     echo "Debug Information: '$BAM.metadata.bam_index''" >> "$output1" &&
     echo "BAM variable is '$BAM'" >> "$output1" &&
     echo "FASTA variable is '$FASTA'" >> "$output1" &&
     echo "VCF variable is '$VCF'" >> "$output1" &&
 
-    ln -s '$VCF' known_sites.vcf &&
     ln -s '$FASTA' fasta.fa &&
     ln -s '$BAM' bamfile.bam &&
 
@@ -34,10 +37,11 @@
         #end for
         -O "$output1"
     #else:
+        ln -s '$VCF' known_sites.vcf &&
         bgzip -c known_sites.vcf > known_sites.vcf.gz &&
         tabix -p vcf known_sites.vcf.gz && 
 
-        sudo gatk BaseRecalibrator -I bamfile.bam -R fasta.fa --known-sites known_sites.vcf.gz -O "$output1"
+        gatk BaseRecalibrator -I bamfile.bam -R fasta.fa --known-sites known_sites.vcf.gz -O "$output1"
     #end if
 
     ##Input Validation
@@ -70,6 +74,7 @@
     #if str($exclude_intervals_file) != "None"
         --exclude-intervals '$exclude_intervals_file'
     #end if
+    --interval-exclusion-padding '$interval_exclusion_padding'
     --interval-merging-rule '$interval_merging_rule'
     --interval-set-rule '$interval_set_rule'
 
@@ -105,7 +110,7 @@
         --use-jdk-inflater
     #end if
     
-    #Labeling
+    ##Labeling
     --binary-tag-name '$binary_tag_name'
 
     ##Macro Files
@@ -124,18 +129,20 @@
     
     ]]></command>
     <inputs>
-        <param type="data" name="BAM" format="bam,sam,cram" label="BAM, SAM, or CRAM file containing reads"/>
-        <param type="data" name="FASTA" format="fasta" label="Reference file"/>
-
+        <param name="BAM" type="data" format="bam,sam,cram" label="BAM, SAM, or CRAM file containing reads"/>
+        <param name="FASTA" type="data" format="fasta" label="Reference file"/>
+        <param name="FASTA_SELECT" type="select" label="Select reference genome" help="If your genome of interest is not listed, contact the Galaxy team" optional="True">
+            <options from_data_table="fasta_indexes" />
+        </param>
         <conditional name="known_sites">
-            <param name="num_sites" type="select" label="Number of files containing known sites">
-                <option value="single" selected="true">Single</option>
-                <option value="multiple">multiple</option>
+            <param name="num_sites" type="select" label="Number of files containing known sites" >
+                <option value="Single" selected="true">Single</option>
+                <option value="Multiple">Multiple</option>
             </param>
-            <when value="single">
+            <when value="Single">
                 <param type="data" name="VCF" format="vcf" label="Known sites"/>
             </when>
-            <when value="multiple">
+            <when value="Multiple">
                 <param type="data_collection" collection_type="list" name="VCF" format="vcf" label="Known sites"/>
             </when>
         </conditional>
@@ -212,13 +219,18 @@
                 -create-output-variant-md5 
                 -QUIET
                 -seconds-between-progress-updates
+                -TMP_DIR
                 options ommited -->
     </inputs>
     <outputs>
-        <data name="output1" format="table" label="recalibration_report.table"/>
+        <data name="output1" format="table" label="Recalibration table file"/>
     </outputs>
     <help>
-        Generates a recalibration table based on various covariates.
-        See: https://gatk.broadinstitute.org/hc/en-us/articles/360037438491-BaseRecalibrator
+       **What it does**
+
+      First pass of the base quality score recalibration. Generates a recalibration table based on various covariates. The default covariates are read group, reported quality score, machine cycle, and nucleotide context.
+      This walker generates tables based on specified covariates. It does a by-locus traversal operating only at sites that are in the known sites VCF. ExAc, gnomAD, or dbSNP resources can be used as known sites of variation. We assume that all reference mismatches we see are therefore errors and indicative of poor base quality. Since there is a large amount of data one can then calculate an empirical probability of error given the particular covariates seen at this site, where p(error) = num mismatches / num observations. The output file is a table (of the several covariate values, num observations, num mismatches, empirical quality score).
+
+      https://gatk.broadinstitute.org/hc/en-us/articles/360036898312-BaseRecalibrator
     </help>
 </tool>

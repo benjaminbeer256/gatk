@@ -1,0 +1,118 @@
+<tool id="template" name="GATK4 Tool Template" version="1.0.0">
+    <description>- Apply base quality score recalibration</description>
+    <requirements>
+      <requirement type="package" version="4.2.6.1">gatk4</requirement>
+    </requirements>
+
+    <command>
+        <![CDATA[
+        INDEXING INPUTS
+
+        gatk [COMMAND] [INPUTS]
+
+        ##Input Validation
+        --read-validation-stringency '$read_validation_stringency'
+        #if not $disable_sequence_dictionary_validation
+            --disable-sequence-dictionary-validation
+        #end if
+        #if $lenient
+            --lenient
+        #end if
+
+        ##Read Filters
+        #if not $disable_tool_default_read_filters
+            --disable-tool-default-read-filters
+        #end if
+        $read_filter
+        $disable_read_filter
+    
+        ##Genomic Intervals
+        #if $exclude_intervals_string
+            --exclude-intervals '$exclude_intervals_string'
+        #end if
+        #if str($exclude_intervals_file) != "None"
+            --exclude-intervals '$exclude_intervals_file'
+        #end if
+        --interval-exclusion-padding '$interval_exclusion_padding'
+        --interval-set-rule '$interval_set_rule'
+
+        ##Performance
+        #if $use_jdk_deflater
+            --use-jdk-deflater
+        #end if
+        #if $use_jdk_inflater
+            --use-jdk-inflater
+        #end if
+
+        ##Macro Files
+        #if str($gatk_config_file)
+            --gatk-config-file '$gatk_config_file'
+        #end if
+        #if str($arguments_file)
+            --arguments-file '$arguments_file'
+        #end if
+        #if str($sequence_dictionary)
+            --sequence-dictionary '$sequence_dictionary'
+        #end if
+        #if str($read_index) != "None"
+            --read-index '$read_index'
+        #end if
+    
+        ]]>
+    </command>
+    <inputs>
+      <section name="Input Validation">
+        <param type="select" argument="--read-validation-stringency" label="Validation stringency for all coordinate files" >
+            <option value="SILENT"  selected="True">SILENT</option>
+            <option value="STRICT">STRICT</option>
+            <option value="LENIENT">LENIENT</option>
+        </param>
+        <param type="boolean" argument="--disable-sequence-dictionary-validation" label="Validate inputs with sequence dictionaries" checked="True" help="Disable at your own risk!" />
+        <param type="boolean" argument="--lenient" label="Process VCF files leniently" checked="false" />
+      </section>
+      <section name="Read Filters" expanded="false" help="Refer to GATK tool index for available filters">
+        <param type="boolean" argument="--disable-tool-default-read-filters" label="Use default read filters" checked="True" />
+        <param type="text" argument="--read-filter" label="Additional read filters to be applied before analysis" optional="True" help="Enter each read filter as you would in the command line: --read-filter 'NAME' --[option] 'VALUE'" />
+        <param type="text" argument="--disable-read-filter" label="Read filters to be disabled before analysis" optional="True" help="Enter each read filter as you would in the command line: --disable-read-filter 'NAME'"/>
+      </section>
+      <section name="Genomic Intervals">
+        <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
+        <param type="text" name="exclude_intervals_string" argument="--exclude-intervals" label="Excluded intervals manually" optional="True" help="samtools-style genomic intervals to be excluded (e.g. chr24 or chr24:100-200)" />
+        <param type="data" name="exclude_intervals_file" argument="--exclude-intervals" label="Excluded intervals with file" optional="True" help="File containing genomic intervals to be excluded (e.g. chr24 or chr24:100-200)" />
+        <param type="integer" argument="--interval-exclusion-padding" label="Padding to add to each excluded interval (bp)" value="0" help="For example, '-XL 1:100' with a padding value of 20 would turn into '-XL 1:80-120'."/>
+        <param type="select" argument="--interval-set-rule" label="Use union or intersection of all included (-L) or excluded (-XL) intervals" >
+            <option value="UNION" selected="True">UNION</option>
+            <option value="INTERSECTION">INTERSECTION</option>
+        </param>
+      </section>
+      <section name="Read Qualities">
+      </section>
+      <section name="Performance">
+        <param type="boolean" argument="--use-jdk-deflater" label="Use JDK Deflater" checked="False" help="As opposed to IntelDeflater"/>
+        <param type="boolean" argument="--use-jdk-inflater" label="Use JDK Inflater" checked="False" help="As opposed to IntelInflater"/>
+      </section>
+      <section name="Macro files" help="Arguments cannot refer to other files.">
+        <param type="data" argument="--gatk-config-file" label="GATK config file" optional="True" help="A configuration file to use with the GATK." />
+        <param type="data" argument="--arguments-file" label="Argument file" optional="True" help="Add file with arguments to add to GATK call." />
+        <param type="data" format=".dict" argument="--sequence-dictionary" label="Master sequence dictionary" optional="True" />
+        <param type="data" argument="--read-index" label="Index file for BAM input" optional="True" help="If not specified, the .bai file will be automatically generated." />
+      </section>
+    </inputs>
+    <outputs>
+        <data name="OUTPUT" type="data" format="bam" label="Recalibrated BAM file"/>
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help>
+      **What it does**
+
+      Apply base quality score recalibration
+      This tool performs the second pass in a two-stage process called Base Quality Score Recalibration (BQSR). Specifically, it recalibrates the base qualities of the input reads based on the recalibration table produced by the BaseRecalibrator tool, and outputs a recalibrated BAM or CRAM file.
+
+      https://gatk.broadinstitute.org/hc/en-us/articles/360037055712-ApplyBQSR
+
+    </help>
+
+</tool>
