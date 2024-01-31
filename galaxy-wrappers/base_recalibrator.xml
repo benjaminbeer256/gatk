@@ -1,10 +1,12 @@
 <tool id="gatk4_BaseRecalibrator" name="GATK4 BaseRecalibrator" version="0.1.0+galaxy0" python_template_version="3.5" profile="21.05">
-    <description>Generates recalibration table for Base Quality Score Recalibration (BQSR)</description>
+    <description>- Generates recalibration table for Base Quality Score Recalibration (BQSR)</description>
     <requirements>
       <requirement type="package" version="4.2.6.1">gatk4</requirement>
     </requirements>
-
-    <command detect_errors="exit_code"><![CDATA[
+    <macros>
+        <import>template.xml</import>
+    </macros>
+    <command detect_errors="exit_code">
     echo "Debug Information: '$BAM.metadata.bam_index''" >> "$output1" &&
     echo "BAM variable is '$BAM'" >> "$output1" &&
     echo "FASTA variable is '$FASTA'" >> "$output1" &&
@@ -13,6 +15,7 @@
     ln -s '$FASTA' fasta.fa &&
     ln -s '$BAM' bamfile.bam &&
 
+    ##Not necessary, just made this to test getting output from commands
     #import subprocess
     #set $bam_path = str($BAM)
     #set $groups = subprocess.check_output(["samtools", "view", "-h", str($bam_path)], stderr=subprocess.STDOUT, shell=False).decode('utf-8')
@@ -114,20 +117,19 @@
     --binary-tag-name '$binary_tag_name'
 
     ##Macro Files
-    #if str($gatk_config_file)
+    #if str($gatk_config_file) != "None"
         --gatk-config-file '$gatk_config_file'
     #end if
-    #if str($arguments_file)
-        --arguments-file '$arguments_file'
+    #if str($arguments_file) != "None"
+        --arguments_file '$arguments_file'
     #end if
-    #if str($sequence_dictionary)
+    #if str($sequence_dictionary) != "None"
         --sequence-dictionary '$sequence_dictionary'
     #end if
     #if str($read_index) != "None"
         --read-index '$read_index'
     #end if
-    
-    ]]></command>
+    </command>
     <inputs>
         <param name="BAM" type="data" format="bam,sam,cram" label="BAM, SAM, or CRAM file containing reads"/>
         <param name="FASTA" type="data" format="fasta" label="Reference file"/>
@@ -204,7 +206,7 @@
         </section>
         <section name="Macro files" help="Arguments cannot refer to other files.">
             <param type="data" argument="--gatk-config-file" label="GATK config file" optional="True" help="A configuration file to use with the GATK." />
-            <param type="data" argument="--arguments-file" label="Argument file" optional="True" help="Add file with arguments to add to GATK call." />
+            <param type="data" argument="--arguments_file" label="Argument file" optional="True" help="Add file with arguments to add to GATK call." />
             <param type="data" format=".dict" argument="--sequence-dictionary" label="Master sequence dictionary" optional="True" />
             <param type="file" argument="--read-index" label="Index file for BAM input" optional="True" help="If not specified, the .bai file will be automatically generated." />
         </section>
