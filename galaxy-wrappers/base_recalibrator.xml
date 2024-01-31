@@ -6,7 +6,7 @@
     <macros>
         <import>template.xml</import>
     </macros>
-    <command detect_errors="exit_code">
+    <command detect_errors="exit_code"><![CDATA[
     echo "Debug Information: '$BAM.metadata.bam_index''" >> "$output1" &&
     echo "BAM variable is '$BAM'" >> "$output1" &&
     echo "FASTA variable is '$FASTA'" >> "$output1" &&
@@ -129,7 +129,7 @@
     #if str($read_index) != "None"
         --read-index '$read_index'
     #end if
-    </command>
+    ]]></command>
     <inputs>
         <param name="BAM" type="data" format="bam,sam,cram" label="BAM, SAM, or CRAM file containing reads"/>
         <param name="FASTA" type="data" format="fasta" label="Reference file"/>
