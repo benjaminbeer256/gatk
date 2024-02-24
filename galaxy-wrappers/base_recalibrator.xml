@@ -7,23 +7,12 @@
         <import>macros.xml</import>
     </macros>
     <command detect_errors="exit_code">
-    <![CDATA[
-    echo "Debug Information: '$BAM.metadata.bam_index''" >> "$output1" &&
+    <![CDATA[  
     echo "BAM variable is '$BAM'" >> "$output1" &&
     echo "FASTA variable is '$FASTA'" >> "$output1" &&
-    echo "VCF variable is '$VCF'" >> "$output1" &&
 
-    ln -s '$FASTA' fasta.fa &&
-    ln -s '$BAM' bamfile.bam &&
-
-    ##Not necessary, just made this to test getting output from commands
-    #import subprocess
-    #set $bam_path = str($BAM)
-    #set $groups = subprocess.check_output(["samtools", "view", "-h", str($bam_path)], stderr=subprocess.STDOUT, shell=False).decode('utf-8')
-    #if "@RG" not in str($groups)
-        echo "BAM file must have read groups" &&
-        exit 1
-    #end if
+    ln -s "$FASTA" fasta.fa &&
+    ln -s "$BAM" bamfile.bam &&
 
     gatk BuildBamIndex -I bamfile.bam &&
 
@@ -31,26 +20,27 @@
     gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict &&
 
     #if $known_sites.num_sites == "Multiple"
-        #for $file in $VCF:
-            bgzip -c '$file' > '$file'.gz &&
-            tabix -p vcf '$file'.gz && 
+        #for file in $VCF:
+            bgzip -c "$file" > "$file.gz" &&
+            tabix -p vcf "$file.gz" 
         #end for
+
         gatk BaseRecalibrator -I bamfile.bam -R fasta.fa
-        #for $file in $VCF:
-            --known-sites '$file'.gz 
+        #for file in $VCF:
+            --known-sites "$file.gz" 
         #end for
         -O "$output1"
-    #else:
-        ln -s '$VCF' known_sites.vcf &&
+    #else
+        ln -s "$VCF" known_sites.vcf &&
         bgzip -c known_sites.vcf > known_sites.vcf.gz &&
         tabix -p vcf known_sites.vcf.gz && 
 
         gatk BaseRecalibrator -I bamfile.bam -R fasta.fa --known-sites known_sites.vcf.gz -O "$output1"
     #end if
 
-    #if '$gatk_param_type_selector' == "advanced"
+    #if $gatk_param_type_selector == "advanced"
         ##Input Validation
-        --read-validation-stringency '$read_validation_stringency'
+        --read-validation-stringency "$read_validation_stringency"
         #if not $disable_sequence_dictionary_validation
             --disable-sequence-dictionary-validation
         #end if
@@ -58,22 +48,15 @@
             --lenient
         #end if
 
-        ##Read Filters
-        #if not $disable_tool_default_read_filters
-            --disable-tool-default-read-filters
-        #end if
-        $read_filter
-        $disable_read_filter
-    
         ##Genomic Intervals
         #if $exclude_intervals_string
-            --exclude-intervals '$exclude_intervals_string'
+            --exclude-intervals "$exclude_intervals_string"
         #end if
         #if str($exclude_intervals_file) != "None"
-            --exclude-intervals '$exclude_intervals_file'
+            --exclude-intervals "$exclude_intervals_file"
         #end if
-        --interval-exclusion-padding '$interval_exclusion_padding'
-        --interval-set-rule '$interval_set_rule'
+        --interval-exclusion-padding "$interval_exclusion_padding"
+        --interval-set-rule "$interval_set_rule"
 
         ##Performance
         #if $use_jdk_deflater
@@ -85,63 +68,190 @@
 
         ##Macro Files
         #if str($gatk_config_file)
-            --gatk-config-file '$gatk_config_file'
+            --gatk-config-file "$gatk_config_file"
         #end if
         #if str($arguments_file)
-            --arguments-file '$arguments_file'
+            --arguments-file "$arguments_file"
         #end if
         #if str($sequence_dictionary)
-            --sequence-dictionary '$sequence_dictionary'
+            --sequence-dictionary "$sequence_dictionary"
         #end if
         #if str($read_index) != "None"
-            --read-index '$read_index'
+            --read-index "$read_index"
         #end if
     #end if
 
-    #if '$tool_param_selector' == "advanced"
+    #if $tool_param_selector == "advanced"
         ##Input Validation
         #if $low_quality_tail
-            --low-quality-tail '$low_quality_tail'
+            --low-quality-tail "$low_quality_tail"
         #end if
-        #if $lenient
-            --lenient
+
+        ##Read Filters
+        --disable-tool-default-read-filters
+        #for $filter in $tool_filters:
+            --read-filter "$filter"
+        #end for
+
+        #if $AmbiguousBaseReadFilter:
+            --read-filter "AmbiguousBaseReadFilter"
+            #if $ambig_filter_frac
+                --ambig-filter-frac "$ambig_filter_frac"
+            #else
+                --ambig-filter-bases "$ambig_filter_bases"
+            #end if
+        #end if
+
+        #if $ExcessiveEndClippedReadFilter
+            --read-filter "ExcessiveEndClippedReadFilter" 
+            --max-clipped-bases "$max_clipped_bases"
+        #end if
+
+        #if $FlowBasedTPAttributeValidReadFilter
+            --read-filter "FlowBasedTPAttributeValidReadFilter" 
+            --read-filter-max-hmer "$read_filter_max_hmer"
+        #end if
+
+        #if $FragmentLengthReadFilter
+            --read-filter "FragmentLengthReadFilter" 
+            #if $max_fragment_length
+                --max-fragment-length "$max_fragment_length"
+            #end if
+            #if $min_fragment_length
+                --min-fragment-length "$min_fragment_length"
+            #end if
+        #end if
+
+        #if $IntervalOverlapReadFilter
+            --read-filter "IntervalOverlapReadFilter" 
+            --keep-intervals "$keep_intervals"
+        #end if
+
+        #if $JexlExpressionReadTagValueFilter
+            --read-filter "JexlExpressionReadTagValueFilter" 
+            --read-filter-expression "$read_filter_expression"
+        #end if
+
+        #if $LibraryReadFilter
+            --read-filter "LibraryReadFilter" 
+            --library "$library"
+        #end if
+
+        #if $MappingQualityReadFilter
+            --read-filter "MappingQualityReadFilter" 
+            #if $minimum_mapping_quality
+                --minimum-mapping-quality "$minimum_mapping_quality"
+            #end if
+            #if $maximum_mapping_quality
+                --maximum-mapping-quality "$maximum_mapping_quality"
+            #end if
+        #end if
+
+        #if $MateDistantReadFilter
+            --read-filter "MateDistantReadFilter" 
+            --mate-too-distant-length "$mate_too_distant_length"
+        #end if
+
+        #if $OverclippedReadFilter
+            --read-filter "OverclippedReadFilter" 
+            --filter-too-short "$filter_too_short"
+            --dont-require-soft-clips-both-ends "$dont_require_soft_clips_both_ends"
+        #end if
+
+        #if $PlatformReadFilter
+            --read-filter "PlatformReadFilter" 
+            --platform-filter-name "$platform_filter_name"
+        #end if
+
+        #if $PlatformUnitReadFilter
+            --read-filter "PlatformUnitReadFilter" 
+            --black-listed-lanes "$black_listed_lanes"
+        #end if
+
+        #if $ReadGroupBlackListReadFilter
+            --read-filter "ReadGroupBlackListReadFilter" 
+            --read-group-black-list "$read_group_black_list"
+        #end if
+
+        #if $ReadGroupReadFilter
+            --read-filter "ReadGroupReadFilter" 
+            --keep-read-group "$keep_read_group"
+        #end if
+
+        #if $ReadLengthReadFilter
+            --read-filter "ReadLengthReadFilter" 
+            --max-read-length "$max_read_length"
+            #if $min_read_length
+                --min-read-length "$min_read_length"
+            #end if
+        #end if
+
+        #if $ReadNameReadFilter
+            --read-filter "ReadNameReadFilter" 
+            --read-name "$read_name"
+        #end if
+
+        #if $ReadStrandFilter
+            --read-filter "ReadStrandFilter" 
+            --keep-reverse-strand-only "$keep_reverse_strand_only"
+        #end if
+
+        #if $ReadTagValueFilter
+            --read-filter "ReadTagValueFilter" 
+            --read-filter-tag "$read_filter_tag"
+            --read-filter-tag-comp "$read_filter_tag_comp"
+        #end if
+
+        #if $SampleReadFilter
+            --read-filter "SampleReadFilter" 
+            --sample "$sample"
+        #end if
+
+        #if $SoftClippedReadFilter:
+            --read-filter "SoftClippedReadFilter"
+            --invert-soft-clip-ratio-filter "$invert_soft_clip_ratio_filter"
+            #if $soft_clipped_ratio_threshold
+                --soft-clipped-ratio-threshold "$soft_clipped_ratio_threshold"
+            #else
+                --soft-clipped-leading-trailing-ratio "$soft_clipped_leading_trailing_ratio"
+            #end if
         #end if
 
         ##Genomic Intervals
         #if $intervals
-            --intervals '$intervals'
+            --intervals "$intervals"
         #end if
-        --interval-padding '$interval_padding'
-        --interval-merging-rule '$interval_merging_rule'
+        --interval-padding "$interval_padding"
+        --interval-merging-rule "$interval_merging_rule"
 
         ##Penalties & Buffers
-        --bqsr-baq-gap-open-penalty '$bqsr_baq_gap_open_penalty'
-        --cloud-prefetch-buffer '$cloud_prefetch_buffer'
+        --bqsr-baq-gap-open-penalty "$bqsr_baq_gap_open_penalty"
+        --cloud-prefetch-buffer "$cloud_prefetch_buffer"
         #if $cloud_index_prefetch_buffer
-        --cloud-index-prefetch-buffer '$cloud_index_prefetch_buffer'
+            --cloud-index-prefetch-buffer "$cloud_index_prefetch_buffer"
         #end if
 
         ##Read Qualities
         #if $use_original_qualitites
-            --use-original-qualitites
+            --use-original-qualities
         #end if
-        --quantizing-levels '$quantizing_levels'
-        --default-base-qualities '$default_base_qualities'
+        --quantizing-levels "$quantizing_levels"
+        --default-base-qualities "$default_base_qualities"
         --deletions-default-quality $deletions_default_quality
         --insertions-default-quality $insertions_default_quality
         --mismatches-default-quality $mismatches_default_quality
 
         ##Performance
-        --indels-context-size '$indels_context_size'
-        --mismatches-context-size '$mismatches_context_size'
-        --gcs-max-retries '$gcs_max_retries'
-        --maximum-cycle-value '$maximum_cycle_value'
+        --indels-context-size "$indels_context_size"
+        --mismatches-context-size "$mismatches_context_size"
+        --gcs-max-retries "$gcs_max_retries"
+        --maximum-cycle-value "$maximum_cycle_value"
         #if not $disable_bam_index_caching
             --disable-bam-index-caching
         #end if
         
         ##Labeling
-        --binary-tag-name '$binary_tag_name'
+        --binary-tag-name "$binary_tag_name"
     #end if
     ]]></command>
     <inputs>
@@ -171,51 +281,255 @@
             <option value="advanced">Advanced</option>
             </param>
             <when value = "basic">
-            <!--Do nothing-->
+                <!--Do nothing-->
             </when>
             <when value="advanced">
-            <section name="Input Validation">
-                <param type="integer" argument="--low-quality-tail" label="Minimum quality for tails of reads to be considered" value="2" />
-                <param type="boolean" argument="--disable-sequence-dictionary-validation" label="Validate inputs with sequence dictionaries" checked="True" help="Disable at your own risk!" />
-            </section>
-            <section name="Genomic Intervals">
-                <param type="text" argument="--intervals" label="Include genomic intervals" optional="True" help="samtools-style genomic intervals to be included (e.g. chr24 or chr24:100-200)" />
-                <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
-                <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
-                    <option value="ALL" selected="True">ALL</option>
-                    <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
-                </param>
-            </section>
-            <section name="Penalties &amp; Buffers">
-                <param type="float" argument="--bqsr-baq-gap-open-penalty" label="BQSR BAQ gap open penalty" value="40.0" />
-                <param type="integer" argument="--cloud-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" value="40" help="0 to disable." />
-                <param type="integer" argument="--cloud-index-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" optional="True" help="Defaults to cloudPrefetchBuffer" />
-            </section>
-            <section name="Read Qualities">
-                <param type="boolean" argument="--use-original-qualitites" label="Use original base qualities (no BQSR/recalibration)" checked="False" help="Use the original base qualities (that were in the data before BQSR/recalibration) which are stored in the OQ tag, if present, rather than post-recalibration quality scores." />
-                <param type="integer" argument="--quantizing-levels" label="Number of distinct quality scores in quantized output" value="16" help="Tells BQSR the number of levels of quantization to use to build the quantization table." />
-                <param type="integer" argument="--default-base-qualities" label="Default base quality for missing base quality scores" value="-1" help="-1 disables default base quality assignment." />
-                <param type="integer" argument="--deletions-default-quality" label="Default base quality for mismatches in covariate model" value="45" help="Enter negative value to disable." />
-                <param type="integer" argument="--insertions-default-quality" label="Default base quantity for insertions in covariate model" value="45" help="Enter negative value to disable." />
-                <param type="integer" argument="--mismatches-default-quality" label="Default quality for base mismatches covariate" value="-1" help="A default base qualities to use as a prior (reported quality) in the mismatch covariate model." />
-            </section>
-            <section name="Performance">
-                <param type="integer" argument="--indels-context-size" label="Size of the k-mer context to use for base insertions &amp; deletions" min="1" max="13" value="3" />
-                <param type="integer" argument="--mismatches-context-size" label="Size of k-mer context to be used for base mismatches" value="2" min="1" max="13" help="The context covariate will use a context of this size to calculate its covariate value for base mismatches." />
-                <param type="integer" argument="--gcs-max-retries" value="20" label="Number of times to attempt to re-initiate connection to GCS bucket channel" />
-                <param type="integer" argument="--maximum-cycle-value" label="Maximum cycle value permitted for Cycle covariate" value="500" help="Generates an error if Cycle covariate encounters a cycle greater than this value.  Argument ignored if Cycle covariate not used" />
-                <param type="boolean" argument="--disable-bam-index-caching" label="Cache bam indexes (reduces memory requirements)" checked="True" />
-            </section>
-            <section name="Labeling">
-                <param type="text" argument="--binary-tag-name" label="Binary tag Name" optional="True" help="The tag name for the binary tag covariate (if using it)." />
-            </section>
+                <section name="Input Validation">
+                    <param type="integer" argument="--low-quality-tail" label="Minimum quality for tails of reads to be considered" value="2" />
+                    <param type="boolean" argument="--disable-sequence-dictionary-validation" label="Validate inputs with sequence dictionaries" checked="True" help="Disable at your own risk!" />
+                </section>
+
+                <section name="Read Filters">
+                    <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters"  >
+                        <option value="AlignmentAgreesWithHeaderReadFilter" selected="false" />
+                        <option value="AllowAllReadsReadFilter" selected="false" />
+                        <option value="CigarContainsNoNOperator" selected="false" />
+                        <option value="FirstOfPairReadFilter" selected="false" />
+                        <option value="FlowBasedTPAttributeSymetricReadFilter" selected="false" />
+                        <option value="GoodCigarReadFilter" selected="false" />
+                        <option value="HasReadGroupReadFilter" selected="false" />
+                        <option value="HmerQualitySymetricReadFilter" selected="false" />
+                        <option value="MappedReadFilter" selected="false" />
+                        <option value="MappingQualityAvailableReadFilter" selected="false" />
+                        <option value="MappingQualityNotZeroReadFilter" selected="false" />
+                        <option value="MatchingBasesAndQualsReadFilter" selected="false" />
+                        <option value="MateDifferentStrandReadFilter" selected="false" />
+                        <option value="MateOnSameContigOrNoMappedMateReadFilter" selected="false" />   
+                        <option value="MateUnmappedAndUnmappedReadFilter" selected="false" />
+                        <option value="MetricsReadFilter" selected="false" />
+                        <option value="NonChimericOriginalAlignmentReadFilter" selected="false" />
+                        <option value="NonZeroFragmentLengthReadFilter" selected="false" />
+                        <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="false" />
+                        <option value="NotDuplicateReadFilter" selected="false" />
+                        <option value="NotProperlyPairedReadFilter" selected="false" />
+                        <option value="NotSecondaryAlignmentReadFilter" selected="false" />   
+                        <option value="NotSupplementaryAlignmentReadFilter" selected="false" />
+                        <option value="PairedReadFilter" selected="false" />
+                        <option value="PassesVendorQualityCheckReadFilter" selected="false" />
+                        <option value="PrimaryLineReadFilter" selected="false" />
+                        <option value="ProperlyPairedReadFilter" selected="false" />   
+                        <option value="ReadGroupHasFlowOrderReadFilter" selected="false" />
+                        <option value="ReadLengthEqualsCigarLengthReadFilter" selected="false" />
+                        <option value="SecondOfPairReadFilter" selected="false" />
+                        <option value="SeqIsStoredReadFilter" selected="false" />
+                        <option value="ValidAlignmentEndReadFilter" selected="false" />
+                        <option value="ValidAlignmentStartReadFilter" selected="false" />
+                        <option value="WellformedFlowBasedReadFilter" selected="false" />
+                        <option value="WellformedReadFilter" selected="false" />   
+                        
+                        <!-- Sets the tool default read filters to true -->
+                        <option value="MappingQualityNotZeroReadFilter" selected="true"/>
+                        <option value="MappingQualityAvailableReadFilter" selected="true"/>
+                        <option value="MappedReadFilter" selected="true"/>
+                        <option value="NotSecondaryAlignmentReadFilter" selected="true"/>
+                        <option value="NotDuplicateReadFilter" selected="true"/>
+                        <option value="PassesVendorQualityCheckReadFilter" selected="true"/>
+                        <option value="WellformedReadFilter" selected="true"/>
+                    </param>
+                    <conditional name="AmbiguousBaseReadFilter">
+                        <param type="boolean" name="AmbiguousBaseReadFilter" truevalue="Yes" falsevalue="No" label="Ambiguous Base Read Filter" />
+                        <when value="Yes">
+                            <param type="float" argument="--ambig-filter-frac" value="0.5" optional="true"/>
+                            <param type="integer" argument="--ambig-filter-bases" optional="true"/>
+                        </when>
+                        <when value="No" />
+                    </conditional>
+                    <conditional name="ExcessiveEndClippedReadFilter">
+                        <param type="boolean" name="ExcessiveEndClippedReadFilter" truevalue="Yes" falsevalue="No" label="Excessive End Clipped Read Filter" />
+                        <when value="Yes">
+                            <param type="integer" argument="--max-clipped-bases" value="1000" />
+                        </when>
+                        <when value="No" />
+                    </conditional>
+                    <conditional name="FlowBasedTPAttributeValidReadFilter">
+                        <param type="boolean" name="FlowBasedTPAttributeValidReadFilter" truevalue="Yes" falsevalue="No" label="Flow Based TP Attribute Valid Read Filter" />
+                        <when value="Yes">
+                            <param type="integer" argument="--read-filter-max-hmer" value="12" />
+                        </when>
+                        <when value="No" />
+                    </conditional>
+                    <conditional name="FragmentLengthReadFilter">
+                        <param type="boolean" name="FragmentLengthReadFilter" truevalue="Yes" falsevalue="No" label="Fragment Length Read Filter" />
+                        <when value="Yes">
+                            <param type="integer" argument="--max-fragment-length" value="1000000" />
+                            <param type="integer" argument="--min-fragment-length" value="0" />
+                        </when>
+                        <when value="No" />
+                    </conditional>
+                    <conditional name="IntervalOverlapReadFilter">
+                        <param type="boolean" name="IntervalOverlapReadFilter" truevalue="Yes" falsevalue="No" label="Interval Overlap Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--keep-intervals" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="JexlExpressionReadTagValueFilter">
+                        <param type="boolean" name="JexlExpressionReadTagValueFilter" truevalue="Yes" falsevalue="No" label="Jexl Expression Read Tag Value Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--read-filter-expression" help="One or more JEXL expressions used to filter"/>
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="LibraryReadFilter">
+                        <param type="boolean" name="LibraryReadFilter" truevalue="Yes" falsevalue="No" label="Library Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--library" help="Name of the library to keep"/>
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="MappingQualityReadFilter">
+                        <param type="boolean" name="MappingQualityReadFilter" truevalue="Yes" falsevalue="No" label="Mapping Quality Read Filter" />
+                            <when value="Yes">
+                                <param type="integer" argument="--minimum-mapping-quality" value="10" optional="true" />
+                                <param type="integer" argument="--maximum-mapping-quality" optional="true" />                            
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="MateDistantReadFilter">
+                        <param type="boolean" name="MateDistantReadFilter" truevalue="Yes" falsevalue="No" label="Mate Distant Read Filter" />
+                            <when value="Yes">
+                                <param type="integer" argument="--mate-too-distant-length" value="1000" />                    
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="OverclippedReadFilter">
+                        <param type="boolean" name="OverclippedReadFilter" truevalue="Yes" falsevalue="No" label="Overclipped Read Filter" />
+                            <when value="Yes">
+                                <param type="integer" argument="--filter-too-short" value="30" />   
+                                <param type="boolean" argument="--dont-require-soft-clips-both-ends" value="false" />                 
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="PlatformReadFilter">
+                        <param type="boolean" name="PlatformReadFilter" truevalue="Yes" falsevalue="No" label="Platform Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--platform-filter-name" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="PlatformUnitReadFilter">
+                        <param type="boolean" name="PlatformUnitReadFilter" truevalue="Yes" falsevalue="No" label="Platform Unit Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--black-listed-lanes" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadGroupBlackListReadFilter">
+                        <param type="boolean" name="ReadGroupBlackListReadFilter" truevalue="Yes" falsevalue="No" label="Read Group BlackList Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--read-group-black-list" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadGroupReadFilter">
+                        <param type="boolean" name="ReadGroupReadFilter" truevalue="Yes" falsevalue="No" label="Read Group Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--keep-read-group" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadLengthReadFilter">
+                        <param type="boolean" name="ReadLengthReadFilter" truevalue="Yes" falsevalue="No" label="Read Length Read Filter" />
+                            <when value="Yes">
+                                <param type="integer" argument="--max-read-length" />  
+                                <param type="integer" argument="--min-read-length" value="1" optional="true" />                          
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadNameReadFilter">
+                        <param type="boolean" name="ReadNameReadFilter" truevalue="Yes" falsevalue="No" label="Read Name Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--read-name" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadStrandFilter">
+                        <param type="boolean" name="ReadStrandFilter" truevalue="Yes" falsevalue="No" label="Read Strand Filter" />
+                            <when value="Yes">
+                                <param type="boolean" argument="--keep-reverse-strand-only" value="false" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadTagValueFilter">
+                        <param type="boolean" name="ReadTagValueFilter" truevalue="Yes" falsevalue="No" label="Read Tag Value Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--read-filter-tag" />
+                                <param type="float" argument="--read-filter-tag-comp" value="0.0" />
+                                <param type="select" argument="--read-filter-tag-op" label="Read Filter Tag Operator">
+                                    <option value="EQUAL" selected="true">EQUAL</option>
+                                    <option value="NOT_EQUAL">NOT_EQUAL</option>
+                                    <option value="LESS">LESS</option>
+                                    <option value="LESS_OR_EQUAL">LESS_OR_EQUAL</option>
+                                    <option value="GREATER">GREATER</option>
+                                    <option value="GREATER_OR_EQUAL">GREATER_OR_EQUAL</option>
+                                </param>
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="SampleReadFilter">
+                        <param type="boolean" name="SampleReadFilter" truevalue="Yes" falsevalue="No" label="Sample Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--sample" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="SoftClippedReadFilter">
+                        <param type="boolean" name="SoftClippedReadFilter" truevalue="Yes" falsevalue="No" label="Soft ClippedRead Filter" />
+                            <when value="Yes">
+                                <param type="boolean" argument="--invert-soft-clip-ratio-filter" value="false" />
+                                <param type="float" argument="--soft-clipped-ratio-threshold" optional="true" />
+                                <param type="float" argument="--soft-clipped-leading-trailing-ratio" optional="true" />                            
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                </section>
+
+                <section name="Genomic Intervals">
+                    <param type="text" argument="--intervals" label="Include genomic intervals" optional="True" help="samtools-style genomic intervals to be included (e.g. chr24 or chr24:100-200)" />
+                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
+                    <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
+                        <option value="ALL" selected="True">ALL</option>
+                        <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
+                    </param>
+                </section>
+                <section name="Penalties &amp; Buffers">
+                    <param type="float" argument="--bqsr-baq-gap-open-penalty" label="BQSR BAQ gap open penalty" value="40.0" />
+                    <param type="integer" argument="--cloud-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" value="40" help="0 to disable." />
+                    <param type="integer" argument="--cloud-index-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" optional="True" help="Defaults to cloudPrefetchBuffer" />
+                </section>
+                <section name="Read Qualities">
+                    <param type="boolean" argument="--use-original-qualitites" label="Use original base qualities (no BQSR/recalibration)" checked="False" help="Use the original base qualities (that were in the data before BQSR/recalibration) which are stored in the OQ tag, if present, rather than post-recalibration quality scores." />
+                    <param type="integer" argument="--quantizing-levels" label="Number of distinct quality scores in quantized output" value="16" help="Tells BQSR the number of levels of quantization to use to build the quantization table." />
+                    <param type="integer" argument="--default-base-qualities" label="Default base quality for missing base quality scores" value="-1" help="-1 disables default base quality assignment." />
+                    <param type="integer" argument="--deletions-default-quality" label="Default base quality for mismatches in covariate model" value="45" help="Enter negative value to disable." />
+                    <param type="integer" argument="--insertions-default-quality" label="Default base quantity for insertions in covariate model" value="45" help="Enter negative value to disable." />
+                    <param type="integer" argument="--mismatches-default-quality" label="Default quality for base mismatches covariate" value="-1" help="A default base qualities to use as a prior (reported quality) in the mismatch covariate model." />
+                </section>
+                <section name="Performance">
+                    <param type="integer" argument="--indels-context-size" label="Size of the k-mer context to use for base insertions &amp; deletions" min="1" max="13" value="3" />
+                    <param type="integer" argument="--mismatches-context-size" label="Size of k-mer context to be used for base mismatches" value="2" min="1" max="13" help="The context covariate will use a context of this size to calculate its covariate value for base mismatches." />
+                    <param type="integer" argument="--gcs-max-retries" value="20" label="Number of times to attempt to re-initiate connection to GCS bucket channel" />
+                    <param type="integer" argument="--maximum-cycle-value" label="Maximum cycle value permitted for Cycle covariate" value="500" help="Generates an error if Cycle covariate encounters a cycle greater than this value.  Argument ignored if Cycle covariate not used" />
+                    <param type="boolean" argument="--disable-bam-index-caching" label="Cache bam indexes (reduces memory requirements)" checked="True" />
+                </section>
+                <section name="Labeling">
+                    <param type="text" argument="--binary-tag-name" label="Binary tag Name" optional="True" help="The tag name for the binary tag covariate (if using it)." />
+                </section>
             </when>
         </conditional>
 
         <!-- 
         Omitted:
-        -add-output-sam-program-record,
-        -add-output-vcf-command-line,
         -create-output-bam-index, 
         -create-output-bam-md5, 
         -preserve-qscores-less-than,

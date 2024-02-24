@@ -18,11 +18,76 @@
         <param type="boolean" argument="--disable-sequence-dictionary-validation" label="Validate inputs with sequence dictionaries" checked="True" help="Disable at your own risk!" />
         <param type="boolean" argument="--lenient" label="Process VCF files leniently" checked="false" />
       </section>
-      <section name="Read Filters" expanded="false" help="Refer to GATK tool index for available filters">
-        <param type="boolean" argument="--disable-tool-default-read-filters" label="Use default read filters" checked="True" />
-        <param type="text" argument="--read-filter" label="Additional read filters to be applied before analysis" optional="True" help="Enter each read filter as you would in the command line: --read-filter 'NAME' --[option] 'VALUE'" />
-        <param type="text" argument="--disable-read-filter" label="Read filters to be disabled before analysis" optional="True" help="Enter each read filter as you would in the command line: --disable-read-filter 'NAME'"/>
-      </section>
+
+      <!-- <section name="Read Filters">
+        <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters" help="" >
+          <option value="AlignmentAgreesWithHeaderReadFilter" selected="false" />
+          <option value="AllowAllReadsReadFilter" selected="false" />
+          <option value="AmbiguousBaseReadFilter" selected="false" />
+          <option value="CigarContainsNoNOperator" selected="false" />
+          <option value="ExcessiveEndClippedReadFilter" selected="false" />
+          <option value="FirstOfPairReadFilter" selected="false" />
+          <option value="FlowBasedTPAttributeSymetricReadFilter" selected="false" />
+          <option value="FlowBasedTPAttributeValidReadFilter" selected="false" />
+          <option value="FlowBasedTPAttributeValidReadFilter" selected="false" />
+          <option value="FragmentLengthReadFilter" selected="false" />
+          <option value="GoodCigarReadFilter" selected="false" />
+          <option value="HasReadGroupReadFilter" selected="false" />
+          <option value="HmerQualitySymetricReadFilter" selected="false" />
+          <option value="IntervalOverlapReadFilter" selected="false" />
+          <option value="JexlExpressionReadTagValueFilter" selected="false" />
+          <option value="LibraryReadFilter" selected="false" />   
+          <option value="MappedReadFilter" selected="false" />
+          <option value="MappingQualityAvailableReadFilter" selected="false" />
+          <option value="MappingQualityNotZeroReadFilter" selected="false" />
+          <option value="MappingQualityReadFilter" selected="false" />
+          <option value="MatchingBasesAndQualsReadFilter" selected="false" />
+          <option value="MateDifferentStrandReadFilter" selected="false" />
+          <option value="MateDistantReadFilter" selected="false" />
+          <option value="MateOnSameContigOrNoMappedMateReadFilter" selected="false" />   
+          <option value="MateUnmappedAndUnmappedReadFilter" selected="false" />
+          <option value="MetricsReadFilter" selected="false" />
+          <option value="NonChimericOriginalAlignmentReadFilter" selected="false" />
+          <option value="NonZeroFragmentLengthReadFilter" selected="false" />
+          <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="false" />
+          <option value="NotDuplicateReadFilter" selected="false" />
+          <option value="NotProperlyPairedReadFilter" selected="false" />
+          <option value="NotSecondaryAlignmentReadFilter" selected="false" />   
+          <option value="NotSupplementaryAlignmentReadFilter" selected="false" />
+          <option value="OverclippedReadFilter" selected="false" />
+          <option value="PairedReadFilter" selected="false" />
+          <option value="PassesVendorQualityCheckReadFilter" selected="false" />
+          <option value="PlatformReadFilter" selected="false" />
+          <option value="PlatformUnitReadFilter" selected="false" />
+          <option value="PrimaryLineReadFilter" selected="false" />
+          <option value="ProperlyPairedReadFilter" selected="false" />   
+          <option value="ReadGroupBlackListReadFilter" selected="false" />
+          <option value="ReadGroupHasFlowOrderReadFilter" selected="false" />
+          <option value="ReadGroupReadFilter" selected="false" />
+          <option value="ReadLengthEqualsCigarLengthReadFilter" selected="false" />
+          <option value="ReadLengthReadFilter" selected="false" />
+          <option value="ReadNameReadFilter" selected="false" />
+          <option value="ReadStrandFilter" selected="false" />
+          <option value="ReadTagValueFilter" selected="false" />   
+          <option value="SampleReadFilter" selected="false" />
+          <option value="SecondOfPairReadFilter" selected="false" />
+          <option value="SeqIsStoredReadFilter" selected="false" />
+          <option value="SoftClippedReadFilter" selected="false" />
+          <option value="ValidAlignmentEndReadFilter" selected="false" />
+          <option value="ValidAlignmentStartReadFilter" selected="false" />
+          <option value="WellformedFlowBasedReadFilter" selected="false" />
+          <option value="WellformedReadFilter" selected="false" />   
+
+          <option value="MappingQualityNotZeroReadFilter" selected="true"/>
+          <option value="MappingQualityAvailableReadFilter" selected="true"/>
+          <option value="MappedReadFilter" selected="true"/>
+          <option value="NotSecondaryAlignmentReadFilter" selected="true"/>
+          <option value="NotDuplicateReadFilter" selected="true"/>
+          <option value="PassesVendorQualityCheckReadFilter" selected="true"/>
+          <option value="WellformedReadFilter" selected="true"/>
+        </param>                
+      </section> -->
+      
       <section name="Genomic Intervals">
         <param type="text" name="exclude_intervals_string" argument="--exclude-intervals" label="Excluded intervals manually" optional="True" help="samtools-style genomic intervals to be excluded (e.g. chr24 or chr24:100-200)" />
         <param type="data" name="exclude_intervals_file" argument="--exclude-intervals" label="Excluded intervals with file" optional="True" help="File containing genomic intervals to be excluded (e.g. chr24 or chr24:100-200)" />

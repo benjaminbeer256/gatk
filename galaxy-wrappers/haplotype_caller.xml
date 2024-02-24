@@ -1,172 +1,595 @@
 <tool id="gatk4_HaplotypeCaller" name="GATK4 HaplotypeCaller" version="1.0.0">
     <description>- Call germline SNPs and indels via local re-assembly of haplotypes</description>
     <requirements>
-      <requirement type="package" version="4.2.6.1">gatk4</requirement>
+        <requirement type="package" version="4.2.6.1">gatk4</requirement>
     </requirements>
     <macros>
-      <import>macros.xml</import>
+        <import>macros.xml</import>
     </macros>
     <command detect_errors="exit_code">
     <![CDATA[
-    ln -s '$FASTA' fasta.fa &&
-    ln -s '$BAM' bamfile.bam &&
-    ln -s '$OUTPUT' output.vcf &&
+    ln -s "$FASTA" fasta.fa &&
+    ln -s "$BAM" bamfile.bam &&
+    ln -s "$OUTPUT" output.vcf &&
 
     samtools faidx fasta.fa --output fasta.fa.fai &&
-    gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict 2>&1 &&
+    gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict &&
 
     gatk BuildBamIndex -I bamfile.bam &&
 
     gatk HaplotypeCaller -I bamfile.bam -R fasta.fa -O output.vcf
 
-    ##ADD ALLELES OPTIONS
-
     #if '$gatk_param_type_selector' == "advanced"
-      ##Input Validation
-      --read-validation-stringency '$read_validation_stringency'
-      #if not $disable_sequence_dictionary_validation
-          --disable-sequence-dictionary-validation
-      #end if
-      #if $lenient
-          --lenient
-      #end if
+        ## Input Validation
+        --read-validation-stringency '$read_validation_stringency'
+        #if not $disable_sequence_dictionary_validation
+            --disable-sequence-dictionary-validation
+        #end if
+        #if $lenient
+            --lenient
+        #end if
 
-      ##Read Filters
-      #if not $disable_tool_default_read_filters
-          --disable-tool-default-read-filters
-      #end if
-      $read_filter
-      $disable_read_filter
-  
-      ##Genomic Intervals
-      #if $exclude_intervals_string
-          --exclude-intervals '$exclude_intervals_string'
-      #end if
-      #if str($exclude_intervals_file) != "None"
-          --exclude-intervals '$exclude_intervals_file'
-      #end if
-      --interval-exclusion-padding '$interval_exclusion_padding'
-      --interval-set-rule '$interval_set_rule'
+        ## Read Filters
+        #if not $disable_tool_default_read_filters
+            --disable-tool-default-read-filters
+        #end if
+        $read_filter
+        $disable_read_filter
 
-      ##Performance
-      #if $use_jdk_deflater
-          --use-jdk-deflater
-      #end if
-      #if $use_jdk_inflater
-          --use-jdk-inflater
-      #end if
+        ## Genomic Intervals
+        #if $exclude_intervals_string
+            --exclude-intervals '$exclude_intervals_string'
+        #end if
+        #if str($exclude_intervals_file) != "None"
+            --exclude-intervals '$exclude_intervals_file'
+        #end if
+        --interval-exclusion-padding '$interval_exclusion_padding'
+        --interval-set-rule '$interval_set_rule'
 
-      ##Macro Files
-      #if str($gatk_config_file)
-          --gatk-config-file '$gatk_config_file'
-      #end if
-      #if str($arguments_file)
-          --arguments-file '$arguments_file'
-      #end if
-      #if str($sequence_dictionary)
-          --sequence-dictionary '$sequence_dictionary'
-      #end if
-      #if str($read_index) != "None"
-          --read-index '$read_index'
-      #end if
+        ## Performance
+        #if $use_jdk_deflater
+            --use-jdk-deflater
+        #end if
+        #if $use_jdk_inflater
+            --use-jdk-inflater
+        #end if
+
+        ## Macro Files
+        #if str($gatk_config_file)
+            --gatk-config-file '$gatk_config_file'
+        #end if
+        #if str($arguments_file)
+            --arguments-file '$arguments_file'
+        #end if
+        #if str($sequence_dictionary)
+            --sequence-dictionary '$sequence_dictionary'
+        #end if
+        #if str($read_index) != "None"
+            --read-index '$read_index'
+        #end if
     #end if
-    
+
     #if '$tool_param_selector' == "advanced"
-      ##Genomic Intervals
-      #if $intervals
-          --intervals '$intervals'
-      #end if
-      --interval-padding '$interval_padding'
-      --interval-merging-rule '$interval_merging_rule'
+        ## Population Options
+        #if $pedigree
+            --pedigree "$pedigree"
+        #end if
+        #if $population_callset
+            --population-callset "$population_callset"
+        #end if
+        #if $founder_id
+            --founder-id "$founder_id"
+        #end if
+        --sample-ploidy "$sample_ploidy"
+        --heterozygosity "$heterozygosity"
+        --heterozygosity-stdev "$heterozygosity_stdev"
+        --indel-heterozygosity "$indel_heterozygosity"
 
-      ##Penalties & Buffers
-      --cloud-prefetch-buffer '$cloud_prefetch_buffer'
-      #if $cloud_index_prefetch_buffer
-        --cloud-index-prefetch-buffer '$cloud_index_prefetch_buffer'
-      #end if
+        ## Variant Calling
+        #if $VCF            
+            #if $known_sites.num_sites == "Multiple"
+                #for file in $VCF:
+                    --known-sites "$file" 
+                #end for
+            #else
+                --known-sites "$VCF"
+            #end if
+        #end if
+        #if $dbNSP
+            --dbsnp "$dbsnp"
+        #end if
+        --standard-min-confidence-threshold-for-calling "$standard_min_confidence_threshold_for_calling"
 
-      ##Performance
-      --gcs-max-retries '$gcs_max_retries'
-      --disable-bam-index-caching '$disable_bam_index_caching'
+        ## Read Filters
+        --disable-tool-default-read-filters
+        #for $filter in $tool_filters:
+            --read-filter "$filter"
+        #end for
+
+        #if $AmbiguousBaseReadFilter:
+            --read-filter "AmbiguousBaseReadFilter"
+            #if $ambig_filter_frac
+                --ambig-filter-frac "$ambig_filter_frac"
+            #else
+                --ambig-filter-bases "$ambig_filter_bases"
+            #end if
+        #end if
+
+        #if $ExcessiveEndClippedReadFilter
+            --read-filter "ExcessiveEndClippedReadFilter" 
+            --max-clipped-bases "$max_clipped_bases"
+        #end if
+
+        #if $FlowBasedTPAttributeValidReadFilter
+            --read-filter "FlowBasedTPAttributeValidReadFilter" 
+            --read-filter-max-hmer "$read_filter_max_hmer"
+        #end if
+
+        #if $FragmentLengthReadFilter
+            --read-filter "FragmentLengthReadFilter" 
+            #if $max_fragment_length
+                --max-fragment-length "$max_fragment_length"
+            #end if
+            #if $min_fragment_length
+                --min-fragment-length "$min_fragment_length"
+            #end if
+        #end if
+
+        #if $IntervalOverlapReadFilter
+            --read-filter "IntervalOverlapReadFilter" 
+            --keep-intervals "$keep_intervals"
+        #end if
+
+        #if $JexlExpressionReadTagValueFilter
+            --read-filter "JexlExpressionReadTagValueFilter" 
+            --read-filter-expression "$read_filter_expression"
+        #end if
+
+        #if $LibraryReadFilter
+            --read-filter "LibraryReadFilter" 
+            --library "$library"
+        #end if
+
+        #if $MappingQualityReadFilter
+            --read-filter "MappingQualityReadFilter" 
+            #if $minimum_mapping_quality
+                --minimum-mapping-quality "$minimum_mapping_quality"
+            #end if
+            #if $maximum_mapping_quality
+                --maximum-mapping-quality "$maximum_mapping_quality"
+            #end if
+        #end if
+
+        #if $MateDistantReadFilter
+            --read-filter "MateDistantReadFilter" 
+            --mate-too-distant-length "$mate_too_distant_length"
+        #end if
+
+        #if $OverclippedReadFilter
+            --read-filter "OverclippedReadFilter" 
+            --filter-too-short "$filter_too_short"
+            --dont-require-soft-clips-both-ends "$dont_require_soft_clips_both_ends"
+        #end if
+
+        #if $PlatformReadFilter
+            --read-filter "PlatformReadFilter" 
+            --platform-filter-name "$platform_filter_name"
+        #end if
+
+        #if $PlatformUnitReadFilter
+            --read-filter "PlatformUnitReadFilter" 
+            --black-listed-lanes "$black_listed_lanes"
+        #end if
+
+        #if $ReadGroupBlackListReadFilter
+            --read-filter "ReadGroupBlackListReadFilter" 
+            --read-group-black-list "$read_group_black_list"
+        #end if
+
+        #if $ReadGroupReadFilter
+            --read-filter "ReadGroupReadFilter" 
+            --keep-read-group "$keep_read_group"
+        #end if
+
+        #if $ReadLengthReadFilter
+            --read-filter "ReadLengthReadFilter" 
+            --max-read-length "$max_read_length"
+            #if $min_read_length
+                --min-read-length "$min_read_length"
+            #end if
+        #end if
+
+        #if $ReadNameReadFilter
+            --read-filter "ReadNameReadFilter" 
+            --read-name "$read_name"
+        #end if
+
+        #if $ReadStrandFilter
+            --read-filter "ReadStrandFilter" 
+            --keep-reverse-strand-only "$keep_reverse_strand_only"
+        #end if
+
+        #if $ReadTagValueFilter
+            --read-filter "ReadTagValueFilter" 
+            --read-filter-tag "$read_filter_tag"
+            --read-filter-tag-comp "$read_filter_tag_comp"
+        #end if
+
+        #if $SampleReadFilter
+            --read-filter "SampleReadFilter" 
+            --sample "$sample"
+        #end if
+
+        #if $SoftClippedReadFilter:
+            --read-filter "SoftClippedReadFilter"
+            --invert-soft-clip-ratio-filter "$invert_soft_clip_ratio_filter"
+            #if $soft_clipped_ratio_threshold
+                --soft-clipped-ratio-threshold "$soft_clipped_ratio_threshold"
+            #else
+                --soft-clipped-leading-trailing-ratio "$soft_clipped_leading_trailing_ratio"
+            #end if
+        #end if
+
+        ## Genomic Intervals
+        #if $intervals
+            --intervals "$intervals"
+        #end if
+        --interval-padding "$interval_padding"
+        --interval-merging-rule "$interval_merging_rule"
+
+        ## Penalties & Buffers
+        --cloud-prefetch-buffer '$cloud_prefetch_buffer'
+        #if $cloud_index_prefetch_buffer
+            --cloud-index-prefetch-buffer '$cloud_index_prefetch_buffer'
+        #end if
+
+        ## Alleles
+        #if $alleles
+            --alleles "$alleles"
+        #end if
+        $annotations
+        $annotation_group
+        --annotate-with-num-discovered-alleles "$annotate_with_num_discovered_alleles"
+        $annotations_to_exclude
+        --contamination-fraction-to-filter "$contamination_fraction_to_filter"
+        --num-reference-samples-if-no-call "$num_reference_samples_if_no_call"
+
+        ## Read Qualities and Filtering
+        #if sample_name
+            --sample-name "$sample_name"
+        #end if
+        --max-reads-per-alignment-start "$max_reads_per_alignment_start"
+        --base-quality-score-threshold "$base_quality_score_threshold"
+        --min-base-quality-score "$min_base_quality_score"
+        --correct-overlapping-quality "$correct_overlapping_quality"
+
+        ## Performance
+        --native-pair-hmm-threads "$native_pair_hmm_threads"
+        --native-pair-hmm-use-double-precision "$native_pair_hmm_use_double_precision"
+        --gcs-max-retries "$gcs_max_retries"
+        --disable-bam-index-caching "$disable_bam_index_caching"
+
+        ## Outputs
+        --output-mode "$output_mode"
+        --sites-only-vcf-output "$sites_only_vcf_output"
+        #if $assembly_region_out
+            --assembly-region-out "$ASSEMBLY_REGION_OUTPUT"
+        #end if
     #end if
-        ]]>
+    ]]>
     </command>
     <inputs>
-     <param name="BAM" type="data" format="bam,cram,sam" label="Input file" />
-      <param name="FASTA" type="data" format="fasta" label="Reference file"/>
-            <param name="FASTA_SELECT" type="select" label="Select reference genome" help="If your genome of interest is not listed, contact the Galaxy team" optional="True" >
-            <option> from_data_table="fasta_indexes" </option>
-      </param>
-      <section name="Optional Inputs">
-        <param name="ALLELES" type="data" format="vcf" label="Set of alleles to force-call regardless of evidence"/>
-        <conditional name="annotation_groupsd">
-          <param name="num_sites" type="select" label="Number of files containing known sites" >
-              <option value="Single" selected="true">Single</option>
-              <option value="Multiple">Multiple</option>
-          </param>
-          <when value="Single">
-              <param type="data" name="VCF" format="vcf" label="Known sites"/>
-          </when>
-          <when value="Multiple">
-              <param type="data_collection" collection_type="list" name="VCF" format="vcf" label="Known sites"/>
-          </when>
-        </conditional>
-      </section>
-
-      <expand macro="gatk_param_type_conditional" />
-
-      <conditional name ="tool_params">
-        <param name="tool_param_selector" type="select" label="Basic or Advanced Tool options">
-          <option value="basic" selected="True">Basic</option>
-          <option value="advanced">Advanced</option>
+        <param name="BAM" type="data" format="bam,cram,sam" label="Input file" />
+        <param name="FASTA" type="data" format="fasta" label="Reference file"/>
+        <param name="FASTA_SELECT" type="select" label="Select reference genome" help="If your genome of interest is not listed, contact the Galaxy team" optional="True" >
+            <option value="from_data_table='fasta_indexes'" />
         </param>
-        <when value = "basic">
-          <!--Do nothing-->
-        </when>
-        <when value="advanced">
-          <section name="Read Filters" expanded="false" help="Refer to GATK tool index for available filters">
-            <param type="boolean" argument="--allow-non-unique-kmers-in-ref" label="Allow graphs that have non-unique kmers in the reference" checked="false" />
-          </section>
-          <section name="Genomic Intervals">
-            <param type="text" argument="--intervals" label="Include genomic intervals" optional="True" help="samtools-style genomic intervals to be included (e.g. chr24 or chr24:100-200)" />
-            <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
-            <param type="text" name="exclude_intervals_string" argument="--exclude-intervals" label="Excluded intervals manually" optional="True" help="samtools-style genomic intervals to be excluded (e.g. chr24 or chr24:100-200)" />
-            <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
-                <option value="ALL" selected="True">ALL</option>
-                <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
+
+        <expand macro="gatk_param_type_conditional" />
+
+        <conditional name ="tool_params">
+            <param name="tool_param_selector" type="select" label="Basic or Advanced Tool options">
+                <option value="basic" selected="True">Basic</option>
+                <option value="advanced">Advanced</option>
             </param>
-          </section>
-          <section name="Penalties &amp; Buffers">
-            <param type="integer" argument="--cloud-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" value="40" help="0 to disable." />
-            <param type="integer" argument="--cloud-index-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" optional="True" help="Defaults to cloudPrefetchBuffer" />
-          </section>
-          <section name="Alleles">
-            <param type="text" name="alleles" label="Set of alleles to force-call called regardless of evidence" optional="true" help="Enter each allele as you would in the command line: '-G [allele]' for each allele" />
-            <param type="text" argument="--annotations" label="Specific annotations to add to variant calls" optional="true" />
-            <param type="text" argument="--annotation-group" labe="One or more groups of annotations to apply to variant calls" optional="true" />
-            <param type="boolean" argument="--annotate-with-num-discovered-alleles" label="Annotate records with the number of alternate alleles that were discovered" checked="false" />
-          </section>
-          <section name="Performance">
-            <param type="integer" argument="--gcs-max-retries" value="20" label="Number of times to attempt to re-initiate connection to GCS bucket channel" />
-            <param type="boolean" argument="--disable-bam-index-caching" label="Cache bam indexes (reduces memory requirements)" checked="True" />
-          </section>
-        </when>
-      </conditional>
+            <when value = "basic">
+                <!-- Do nothing -->
+            </when>
+            <when value="advanced">
+            <section name="Population Options" help="See the GATKDocs for full details on the meaning of heterozygosity">
+                <param type="data" format="ped" argument="--pedigree" label="Pedigree file for determining the population founders" optional="true" />
+                <param type="data" format="vcf" argument="--population-callset " label="Callset for calculating genotype priors" optional="true" help="Supporting external panel. Allele counts from this panel (taken from AC,AN or MLEAC,AN or raw genotypes) will be used to inform the frequency distribution underlying the genotype priors." />
+                <param type="text" argument="--founder-id" label="Founder ID" help="Samples representing the population founders" />
+                <param type="integer" argument="--sample-ploidy" label="Ploidy (number of chromosomes) per sample" value="2" help="For pooled data, set to (Number of samples in each pool * Sample Ploidy)."/>
+                <param type="float" argument="--heterozygosity" label="Heterozygosity" value="0.001" help="The expected heterozygosity value used to compute prior probability that a locus is non-reference." />
+                <param type="float" argument="--heterozygosity-stdev" label="Heterozygosity Standard Deviation" value="0.01" help="Standard deviation of heterozygosity for SNP and indel calling." />
+                <param type="float" argument="--indel-heterozygosity" label="Indel Heterozygosity" value="0.000125" help="Informs the prior probability of having an indel at a site." />
+            </section>
+            <section name="Variant Calling">
+                <conditional name="annotation_groups">
+                    <param name="num_sites" type="select" label="Number of files containing known sites" >
+                        <option value="Single" selected="true">Single</option>
+                        <option value="Multiple">Multiple</option>
+                    </param>
+                    <when value="Single">
+                        <param type="data" name="VCF" format="vcf" label="Known sites"/>
+                    </when>
+                    <when value="Multiple">
+                        <param type="data_collection" collection_type="list" name="VCF" format="vcf" label="Known sites"/>
+                    </when>
+                </conditional>
+                <param type="data" format="vcf" argument="--dbsnp" label="dbSNP" help="A dbSNP VCF file" optional="true" />
+                <param type="float" argument="--standard-min-confidence-threshold-for-calling" label="The minimum phred-scaled confidence for calling variants" value="30.0" />
+            </section>
+            <section name="Read Filters">
+                    <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters"  >
+                        <option value="AlignmentAgreesWithHeaderReadFilter" selected="false" />
+                        <option value="AllowAllReadsReadFilter" selected="false" />
+                        <option value="CigarContainsNoNOperator" selected="false" />
+                        <option value="FirstOfPairReadFilter" selected="false" />
+                        <option value="FlowBasedTPAttributeSymetricReadFilter" selected="false" />
+                        <option value="GoodCigarReadFilter" selected="false" />
+                        <option value="HasReadGroupReadFilter" selected="false" />
+                        <option value="HmerQualitySymetricReadFilter" selected="false" />
+                        <option value="MappedReadFilter" selected="false" />
+                        <option value="MappingQualityAvailableReadFilter" selected="false" />
+                        <option value="MappingQualityNotZeroReadFilter" selected="false" />
+                        <option value="MatchingBasesAndQualsReadFilter" selected="false" />
+                        <option value="MateDifferentStrandReadFilter" selected="false" />
+                        <option value="MateOnSameContigOrNoMappedMateReadFilter" selected="false" />   
+                        <option value="MateUnmappedAndUnmappedReadFilter" selected="false" />
+                        <option value="MetricsReadFilter" selected="false" />
+                        <option value="NonChimericOriginalAlignmentReadFilter" selected="false" />
+                        <option value="NonZeroFragmentLengthReadFilter" selected="false" />
+                        <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="false" />
+                        <option value="NotDuplicateReadFilter" selected="false" />
+                        <option value="NotProperlyPairedReadFilter" selected="false" />
+                        <option value="NotSecondaryAlignmentReadFilter" selected="false" />   
+                        <option value="NotSupplementaryAlignmentReadFilter" selected="false" />
+                        <option value="PairedReadFilter" selected="false" />
+                        <option value="PassesVendorQualityCheckReadFilter" selected="false" />
+                        <option value="PrimaryLineReadFilter" selected="false" />
+                        <option value="ProperlyPairedReadFilter" selected="false" />   
+                        <option value="ReadGroupHasFlowOrderReadFilter" selected="false" />
+                        <option value="ReadLengthEqualsCigarLengthReadFilter" selected="false" />
+                        <option value="SecondOfPairReadFilter" selected="false" />
+                        <option value="SeqIsStoredReadFilter" selected="false" />
+                        <option value="ValidAlignmentEndReadFilter" selected="false" />
+                        <option value="ValidAlignmentStartReadFilter" selected="false" />
+                        <option value="WellformedFlowBasedReadFilter" selected="false" />
+                        <option value="WellformedReadFilter" selected="false" />   
+                        
+                        <!-- Sets the tool default read filters to true -->
+                        <option value="NotSecondaryAlignmentReadFilter" selected="true"/>
+                        <option value="GoodCigarReadFilter" selected="true"/>
+                        <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="true"/>
+                        <option value="PassesVendorQualityCheckReadFilter" selected="true"/>
+                        <option value="MappedReadFilter" selected="true"/>
+                        <option value="MappingQualityAvailableReadFilter" selected="true"/>
+                        <option value="NotDuplicateReadFilter" selected="true"/>
+                        <option value="MappingQualityReadFilter" selected="true"/>
+                        <option value="WellformedReadFilter" selected="true"/>
+                    </param>
+                    <conditional name="AmbiguousBaseReadFilter">
+                        <param type="boolean" name="AmbiguousBaseReadFilter" truevalue="Yes" falsevalue="No" label="Ambiguous Base Read Filter" />
+                        <when value="Yes">
+                            <param type="float" argument="--ambig-filter-frac" value="0.5" optional="true"/>
+                            <param type="integer" argument="--ambig-filter-bases" optional="true"/>
+                        </when>
+                        <when value="No" />
+                    </conditional>
+                    <conditional name="ExcessiveEndClippedReadFilter">
+                        <param type="boolean" name="ExcessiveEndClippedReadFilter" truevalue="Yes" falsevalue="No" label="Excessive End Clipped Read Filter" />
+                        <when value="Yes">
+                            <param type="integer" argument="--max-clipped-bases" value="1000" />
+                        </when>
+                        <when value="No" />
+                    </conditional>
+                    <conditional name="FlowBasedTPAttributeValidReadFilter">
+                        <param type="boolean" name="FlowBasedTPAttributeValidReadFilter" truevalue="Yes" falsevalue="No" label="Flow Based TP Attribute Valid Read Filter" />
+                        <when value="Yes">
+                            <param type="integer" argument="--read-filter-max-hmer" value="12" />
+                        </when>
+                        <when value="No" />
+                    </conditional>
+                    <conditional name="FragmentLengthReadFilter">
+                        <param type="boolean" name="FragmentLengthReadFilter" truevalue="Yes" falsevalue="No" label="Fragment Length Read Filter" />
+                        <when value="Yes">
+                            <param type="integer" argument="--max-fragment-length" value="1000000" />
+                            <param type="integer" argument="--min-fragment-length" value="0" />
+                        </when>
+                        <when value="No" />
+                    </conditional>
+                    <conditional name="IntervalOverlapReadFilter">
+                        <param type="boolean" name="IntervalOverlapReadFilter" truevalue="Yes" falsevalue="No" label="Interval Overlap Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--keep-intervals" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="JexlExpressionReadTagValueFilter">
+                        <param type="boolean" name="JexlExpressionReadTagValueFilter" truevalue="Yes" falsevalue="No" label="Jexl Expression Read Tag Value Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--read-filter-expression" help="One or more JEXL expressions used to filter"/>
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="LibraryReadFilter">
+                        <param type="boolean" name="LibraryReadFilter" truevalue="Yes" falsevalue="No" label="Library Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--library" help="Name of the library to keep"/>
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="MappingQualityReadFilter">
+                        <param type="boolean" name="MappingQualityReadFilter" truevalue="Yes" falsevalue="No" label="Mapping Quality Read Filter" />
+                            <when value="Yes">
+                                <param type="integer" argument="--minimum-mapping-quality" value="10" optional="true" />
+                                <param type="integer" argument="--maximum-mapping-quality" optional="true" />                            
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="MateDistantReadFilter">
+                        <param type="boolean" name="MateDistantReadFilter" truevalue="Yes" falsevalue="No" label="Mate Distant Read Filter" />
+                            <when value="Yes">
+                                <param type="integer" argument="--mate-too-distant-length" value="1000" />                    
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="OverclippedReadFilter">
+                        <param type="boolean" name="OverclippedReadFilter" truevalue="Yes" falsevalue="No" label="Overclipped Read Filter" />
+                            <when value="Yes">
+                                <param type="integer" argument="--filter-too-short" value="30" />   
+                                <param type="boolean" argument="--dont-require-soft-clips-both-ends" value="false" />                 
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="PlatformReadFilter">
+                        <param type="boolean" name="PlatformReadFilter" truevalue="Yes" falsevalue="No" label="Platform Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--platform-filter-name" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="PlatformUnitReadFilter">
+                        <param type="boolean" name="PlatformUnitReadFilter" truevalue="Yes" falsevalue="No" label="Platform Unit Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--black-listed-lanes" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadGroupBlackListReadFilter">
+                        <param type="boolean" name="ReadGroupBlackListReadFilter" truevalue="Yes" falsevalue="No" label="Read Group BlackList Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--read-group-black-list" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadGroupReadFilter">
+                        <param type="boolean" name="ReadGroupReadFilter" truevalue="Yes" falsevalue="No" label="Read Group Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--keep-read-group" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadLengthReadFilter">
+                        <param type="boolean" name="ReadLengthReadFilter" truevalue="Yes" falsevalue="No" label="Read Length Read Filter" />
+                            <when value="Yes">
+                                <param type="integer" argument="--max-read-length" />  
+                                <param type="integer" argument="--min-read-length" value="1" optional="true" />                          
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadNameReadFilter">
+                        <param type="boolean" name="ReadNameReadFilter" truevalue="Yes" falsevalue="No" label="Read Name Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--read-name" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadStrandFilter">
+                        <param type="boolean" name="ReadStrandFilter" truevalue="Yes" falsevalue="No" label="Read Strand Filter" />
+                            <when value="Yes">
+                                <param type="boolean" argument="--keep-reverse-strand-only" value="false" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="ReadTagValueFilter">
+                        <param type="boolean" name="ReadTagValueFilter" truevalue="Yes" falsevalue="No" label="Read Tag Value Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--read-filter-tag" />
+                                <param type="float" argument="--read-filter-tag-comp" value="0.0" />
+                                <param type="select" argument="--read-filter-tag-op" label="Read Filter Tag Operator">
+                                    <option value="EQUAL" selected="true">EQUAL</option>
+                                    <option value="NOT_EQUAL">NOT_EQUAL</option>
+                                    <option value="LESS">LESS</option>
+                                    <option value="LESS_OR_EQUAL">LESS_OR_EQUAL</option>
+                                    <option value="GREATER">GREATER</option>
+                                    <option value="GREATER_OR_EQUAL">GREATER_OR_EQUAL</option>
+                                </param>
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="SampleReadFilter">
+                        <param type="boolean" name="SampleReadFilter" truevalue="Yes" falsevalue="No" label="Sample Read Filter" />
+                            <when value="Yes">
+                                <param type="text" argument="--sample" />
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                    <conditional name="SoftClippedReadFilter">
+                        <param type="boolean" name="SoftClippedReadFilter" truevalue="Yes" falsevalue="No" label="Soft ClippedRead Filter" />
+                            <when value="Yes">
+                                <param type="boolean" argument="--invert-soft-clip-ratio-filter" value="false" />
+                                <param type="float" argument="--soft-clipped-ratio-threshold" optional="true" />
+                                <param type="float" argument="--soft-clipped-leading-trailing-ratio" optional="true" />                            
+                            </when>
+                            <when value="No" />
+                    </conditional>
+                </section>
+                <section name="Genomic Intervals">
+                    <param type="text" argument="--intervals" label="Include genomic intervals" optional="True" help="samtools-style genomic intervals to be included (e.g. chr24 or chr24:100-200)" />
+                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
+                    <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
+                        <option value="ALL" selected="True">ALL</option>
+                        <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
+                    </param>
+                </section>
+                <section name="Penalties and Buffers">
+                    <param type="integer" argument="--cloud-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" value="40" help="0 to disable." />
+                    <param type="integer" argument="--cloud-index-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" optional="True" help="Defaults to cloudPrefetchBuffer" />
+                </section>
+                <section name="Alleles">
+                    <param type="data" format="vcf" argument="--alleles" label="Set of alleles to force-call called regardless of evidence" optional="true" />
+                    <param type="text" argument="--annotations" label="Annotations to add to variant calls" optional="true" help="Enter each as you would into the command line '-A [NAME]'"/>
+                    <param type="text" argument="--annotation-group" label="Annotations to apply to variant calls" optional="true" help="Enter each as you would into the command line '-G [NAME]"/>
+                    <param type="boolean" argument="--annotate-with-num-discovered-alleles" label="Annotate records with the number of alternate alleles that were discovered" checked="false" />
+                    <param type="text" argument="--annotations-to-exclude" label="Annotations to exclude from variant calls" optional="true" help="Enter each as you would into the command line '-G [NAME]. Overrides -A and -G annotations" />
+                    <param type="float" argument="--contamination-fraction-to-filter" label="Fraction of contamination to aggressively remove" value="0.0" help="If the pileup contains N total bases, then we will try to remove (N * contamination fraction) bases for each alternate allele." />
+                    <param type="integer" argument="--num-reference-samples-if-no-call" label="Number of hom-ref genotypes to infer at sites" value="0" help="When a variant is not seen in any panel, this argument controls whether to infer (and with what effective strength) that only reference alleles were observed at that site."/>
+                </section>
+                <section name="Read Qualities and Filtering">
+                    <param type="text" argument="--sample-name" label="Name of single sample from a multi-sample bam" optional="true" help="Use this argument to specify that HC should process a single sample out of a multisample BAM file."/>
+                    <param type="integer" argument="--max-reads-per-alignment-start" label="Maximum number of reads per alignment start position" value="50" help="Set to 0 to disable." />
+                    <param type="integer" argument="--base-quality-score-threshold" label="Base Quality Score Threshold" value="18" help="Base qualities below this threshold will be reduced to the minimum (6)" />
+                    <param type="integer" argument="--min-base-quality-score" label="Minimum base quality required for calling" value="10" />
+                    <param type="boolean" argument="--correct-overlapping-quality" label="Correct Overlapping Quality" value="false" />
+                </section>
+                <section name="Performance">
+                    <param type="integer" argument="--native-pair-hmm-threads" label="Threads for pairHMM to use" value="4" />
+                    <param type="boolean" argument="--native-pair-hmm-use-double-precision" value="false" />
+                    <param type="integer" argument="--gcs-max-retries" value="20" label="Number of times to attempt to re-initiate connection to GCS bucket channel" />
+                    <param type="boolean" argument="--disable-bam-index-caching" label="Cache bam indexes (reduces memory requirements)" checked="True" />
+                </section>
+                <section name="Outputs">
+                    <param type="select" argument="--output-mode" label="Which type of calls we should output">
+                        <option value="EMIT_VARIANTS_ONLY" selected="true">EMIT VARIANTS ONLY</option>
+                        <option value="EMIT_ALL_CONFIDENT_SITES">EMIT ALL CONFIDENT SITES</option>
+                        <option value="EMIT_ALL_ACTIVE_SITES">EMIT ALL ACTIVE SITES</option>
+                    </param>
+                    <param type="boolean" argument="--sites-only-vcf-output" label="Don't emit genotype fields when writing vcf" value="false"/>
+                    <param type="boolean" argument="--assembly-region-out" label="Output assembly regions" checked="false" />
+                </section>
+            </when>
+        </conditional>
     </inputs>
     <outputs>
         <data name="OUTPUT" type="data" format="vcf" label="GVCF file"/>
+        <data name="ASSEMBLY_REGION_OUTPUT" type="data" format="tabular" label="Assembly Region Out">
+            <filter>tool_params['tool_param_selector'] == 'advanced' and tool_params['Outputs']['assembly_region_out']</filter>
+        </data>
     </outputs>
 
     <tests>
     </tests>
 
     <help>
-      **What it does**
+        **What it does**
 
-      Apply base quality score recalibration
-      This tool performs the second pass in a two-stage process called Base Quality Score Recalibration (BQSR). Specifically, it recalibrates the base qualities of the input reads based on the recalibration table produced by the BaseRecalibrator tool, and outputs a recalibrated BAM or CRAM file.
+        Apply base quality score recalibration
+        This tool performs the second pass in a two-stage process called Base Quality Score Recalibration (BQSR). Specifically, it recalibrates the base qualities of the input reads based on the recalibration table produced by the BaseRecalibrator tool, and outputs a recalibrated BAM or CRAM file.
 
-      https://gatk.broadinstitute.org/hc/en-us/articles/360037055712-ApplyBQSR
+        https://gatk.broadinstitute.org/hc/en-us/articles/360037055712-ApplyBQSR
 
     </help>
 
