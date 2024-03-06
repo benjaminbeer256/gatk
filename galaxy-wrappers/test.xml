@@ -8,15 +8,23 @@
     </macros>
     <command detect_errors="exit_code">
     <![CDATA[  
-    #if $test
-        echo '$test' >> '$output1'
-    #else
-        echo 'No Int' >> '$output1'
-    #end if
+        export JAVA_HOME=/Users/benjaminbeer/Downloads/jdk-17.0.10.jdk/Contents/Home/bin &&
+        export PATH=/Users/benjaminbeer/Downloads/jdk-17.0.10.jdk/Contents/Home/bin:\$PATH &&
+        java -XshowSettings:properties -version >> '$output1'
     ]]></command>
     <inputs>
-    <param type="integer" name="test" optional="true" />
-
+            <conditional name ="tool_params">
+            <param name="tool_param_selector" type="select" label="Basic or Advanced Tool options">
+                <option value="basic" selected="True">Basic</option>
+                <option value="advanced">Advanced</option>
+            </param>
+            <when value = "basic">
+                <!-- Do nothing -->
+            </when>
+            <when value="advanced">
+        <param type="data" format="ped" argument="--pedigree" label="Pedigree file for determining the population founders" optional="True" />
+    </when>
+        </conditional>
         <!-- 
         Omitted:
         -add-output-sam-program-record,

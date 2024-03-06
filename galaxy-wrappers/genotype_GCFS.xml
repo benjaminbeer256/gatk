@@ -1,50 +1,34 @@
-<tool id="gatk4_GenomicsDBImport" name="GATK4 GenomicsDBImport" version="1.0.0">
-    <description>- Import VCFs to GenomicsDB</description>
+<tool id="gatk4_GenotypeGVCFs" name="GATK4 GenotypeGVCFs" version="1.0.0">
+    <description>- Perform joint genotyping on one or more samples pre-called with HaplotypeCaller</description>
     <requirements>
       <requirement type="package" version="4.2.6.1">gatk4</requirement>
     </requirements>
     <macros>
-        <import>macros.xml</import>
+      <import>macros.xml</import>
     </macros>
+
     <command detect_errors="exit_code">
         <![CDATA[
-        ##Fix to run on arm macbook
-        export JAVA_HOME=/Users/benjaminbeer/Downloads/jdk-17.0.10.jdk/Contents/Home/bin &&
-        export PATH=/Users/benjaminbeer/Downloads/jdk-17.0.10.jdk/Contents/Home/bin:\$PATH &&
-
-        #if str($tool_params.tool_param_selector) == "advanced"
-            #if str($FASTA_TYPE.FASTA_TYPE_SELECTOR) == "uploaded"
-                #if str($FASTA) != "None":
-                    ln -s "$FASTA" fasta.fa &&
-                    #set $reference_provided = true
-                #else 
-                    #set $reference_provided = false
-                #end if
-            #else
-                #set $fasta_file = $fasta_source.fasta_id.fields.path
-                #set $reference_provided = true
-                ln -s "$fasta_file" fasta.fa &&
-            #end if
-            samtools faidx fasta.fa &&
-            gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict &&
+        echo "$FASTA" &&
+        #if $reference_conditional.reference_selector == "File"
+            ln -s '$FASTA' fasta.fa &&
+        #else 
+            #set $fasta_file = $fasta_source.fasta_id.fields.path
+            ln -s "$fasta_file" fasta.fa &&
         #end if
+        samtools faidx fasta.fa --output fasta.fa.fai &&
+        gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict &&
 
-        #if $GVCF_conditional.GVCF_selector == "Individually"
-            #for $i, $file in enumerate($variant_repeat):
-                bgzip -c ${file.GVCF} > '${i}.gz' &&
-                tabix -p vcf '${i}.gz' &&
-            #end for
-            gatk GenomicsDBImport
-            #for $i, $file in enumerate($variant_repeat):
-                --variant '${i}.gz' 
-            #end for
-        #else
-            gatk GenomicsDBImport --sample-name-map '$variants'
-        #end if
-
-        #for $i, $interval in enumerate($intervals_repeat):
-            --intervals '${interval.L}'
-        #end for
+      #if $variant_conditional.variant_selector == "File"
+        ln -s "$variant_list" variants.vcf &&
+        bgzip -c variants.vcf > variants.vcf.gz &&
+        tabix -p vcf variants.vcf.gz && 
+        gatk GenotypeGVCFs --reference fasta.fa --variant variants.vcf.gz
+      #else
+        ##handle database
+        gatk GenotypeGVCFs -R "fasta.fa" -variant gendb://$database
+      #end if
+      -O "$OUTPUT"
 
         #if str($gatk_params.gatk_params_selector) == "advanced"
             ##Input Validation
@@ -81,20 +65,28 @@
             #end if
         #end if
 
+      #if str($tool_param_selector) == "advanced"
+        --sample-ploidy "$sample_ploidy"
+        --heterozygosity "$heterozygosity"
+        --heterozygosity-stdev "$heterozygosity_stdev"
+        --indel-heterozygosity "$indel_heterozygosity"
 
-    #if str($tool_params.tool_param_selector) == "advanced"
-        ##Inputs & Validation
-        #if $reference_provided
-            --reference "fasta.fa"
+        ## Variant Calling
+        #if str($dbNSP) != "None":
+            --dbsnp "$dbsnp"
         #end if
-        --validate-sample-name-map "$validate_sample_name_map"
-        --disable-sequence-dictionary-validation "$disable_sequence_dictionary_validation"
+        #set $prior_list = $input_prior.replace('[', '').replace(']', '').replace(' ', '').split(",")
+        #for $prior in $prior_list:
+            --input-prior'$prior'
+        #end for
+        --standard-min-confidence-threshold-for-calling "$standard_min_confidence_threshold_for_calling"
 
-        ##Read Filters
+        ## Read Filters
         --disable-tool-default-read-filters
         #for $filter in $tool_filters:
             --read-filter "$filter"
         #end for
+
         #if $AmbiguousBaseReadFilter:
             --read-filter "AmbiguousBaseReadFilter"
             #if $ambig_filter_frac
@@ -103,14 +95,17 @@
                 --ambig-filter-bases "$ambig_filter_bases"
             #end if
         #end if
+
         #if $ExcessiveEndClippedReadFilter
             --read-filter "ExcessiveEndClippedReadFilter" 
             --max-clipped-bases "$max_clipped_bases"
         #end if
+
         #if $FlowBasedTPAttributeValidReadFilter
             --read-filter "FlowBasedTPAttributeValidReadFilter" 
             --read-filter-max-hmer "$read_filter_max_hmer"
         #end if
+
         #if $FragmentLengthReadFilter
             --read-filter "FragmentLengthReadFilter" 
             #if $max_fragment_length
@@ -120,18 +115,22 @@
                 --min-fragment-length "$min_fragment_length"
             #end if
         #end if
+
         #if $IntervalOverlapReadFilter
             --read-filter "IntervalOverlapReadFilter" 
             --keep-intervals "$keep_intervals"
         #end if
+
         #if $JexlExpressionReadTagValueFilter
             --read-filter "JexlExpressionReadTagValueFilter" 
             --read-filter-expression "$read_filter_expression"
         #end if
+
         #if $LibraryReadFilter
             --read-filter "LibraryReadFilter" 
             --library "$library"
         #end if
+
         #if $MappingQualityReadFilter
             --read-filter "MappingQualityReadFilter" 
             #if $minimum_mapping_quality
@@ -141,31 +140,38 @@
                 --maximum-mapping-quality "$maximum_mapping_quality"
             #end if
         #end if
+
         #if $MateDistantReadFilter
             --read-filter "MateDistantReadFilter" 
             --mate-too-distant-length "$mate_too_distant_length"
         #end if
+
         #if $OverclippedReadFilter
             --read-filter "OverclippedReadFilter" 
             --filter-too-short "$filter_too_short"
             --dont-require-soft-clips-both-ends "$dont_require_soft_clips_both_ends"
         #end if
+
         #if $PlatformReadFilter
             --read-filter "PlatformReadFilter" 
             --platform-filter-name "$platform_filter_name"
         #end if
+
         #if $PlatformUnitReadFilter
             --read-filter "PlatformUnitReadFilter" 
             --black-listed-lanes "$black_listed_lanes"
         #end if
+
         #if $ReadGroupBlackListReadFilter
             --read-filter "ReadGroupBlackListReadFilter" 
             --read-group-black-list "$read_group_black_list"
         #end if
+
         #if $ReadGroupReadFilter
             --read-filter "ReadGroupReadFilter" 
             --keep-read-group "$keep_read_group"
         #end if
+
         #if $ReadLengthReadFilter
             --read-filter "ReadLengthReadFilter" 
             --max-read-length "$max_read_length"
@@ -173,23 +179,28 @@
                 --min-read-length "$min_read_length"
             #end if
         #end if
+
         #if $ReadNameReadFilter
             --read-filter "ReadNameReadFilter" 
             --read-name "$read_name"
         #end if
+
         #if $ReadStrandFilter
             --read-filter "ReadStrandFilter" 
             --keep-reverse-strand-only "$keep_reverse_strand_only"
         #end if
+
         #if $ReadTagValueFilter
             --read-filter "ReadTagValueFilter" 
             --read-filter-tag "$read_filter_tag"
             --read-filter-tag-comp "$read_filter_tag_comp"
         #end if
+
         #if $SampleReadFilter
             --read-filter "SampleReadFilter" 
             --sample "$sample"
         #end if
+
         #if $SoftClippedReadFilter:
             --read-filter "SoftClippedReadFilter"
             --invert-soft-clip-ratio-filter "$invert_soft_clip_ratio_filter"
@@ -201,124 +212,135 @@
         #end if
 
         ##Genomic Intervals
-        --interval-merging-rule "$interval_merging_rule"
-
+        #for $interval in $intervals_repeat:
+            --intervals ${interval.L}
+        #end for
+        --interval-padding "$interval_padding"
+        --interval-merging-rule "$interval_merging_rule
+        --only-output-calls-starting-in-intervals "$only_output_calls_starting_in_intervals"
+        
         ##Penalties & Buffers
-        --cloud-prefetch-buffer "$cloud_prefetch_buffer"
+        --cloud-prefetch-buffer '$cloud_prefetch_buffer'
         #if $cloud_index_prefetch_buffer
-            --cloud-index-prefetch-buffer "$cloud_index_prefetch_buffer"
+            --cloud-index-prefetch-buffer '$cloud_index_prefetch_buffer'
         #end if
+
+        ##Alleles
+        #if str($alleles) != "None":
+            --alleles "$alleles"
+        #end if
+        #for $annotation in $annotations_repeat:
+            --annotations ${annotation.A}
+        #end for
+        #for $group in $group_repeat:
+            --annotation-group ${group.G}
+        #end for
+        #for $annotation in $exclude_annotations_repeat:
+            --annotations-to-exclude ${annotation.AX}
+        #end for
+        --max-alternate-alleles "$max_alternate_alleles"
+        --max-genotype-count "$max_genotype_count"
+        --annotate-with-num-discovered-alleles "$annotate_with_num_discovered_alleles"
+        --disable-tool-default-annotations "$disable_tool_default_annotations"
+        --use-new-qual-calculator "$use_new_qual_calculator"
 
         ##Performance
-        --batch-size "$batch_size"
         --gcs-max-retries "$gcs_max_retries"
-        --genomicsdb-segment-size "$genomicsdb_segment_size"
-        --genomicsdb-vcf-buffer-size "$genomicsdb_vcf_buffer_size"
-        --max-num-intervals-to-import-in-parallel "$max_num_intervals_to_import_in_parallel"
-        --reader-threads "$reader_threads"
-        --consolidate "$consolidate"
         --disable-bam-index-caching "$disable_bam_index_caching"
+      #end if
 
-        ##Outputs
-        --sites-only-vcf-output "$sites_only_vcf_output"
-        #if $gcs_project_for_requester_pays
-            --gcs-project-for-requester-pays "$gcs_project_for_requester_pays"
-        #end if
-    #end if
-    --genomicsdb-workspace-path genomics_db_out &&
-
-    zip -r out.zip genomics_db_out &&
-    cp out.zip '$output1'
         ]]>
     </command>
     <inputs>
-        <conditional name="GVCF_conditional">
-            <param name="GVCF_selector" type="select" label="Variants" >
-                <option value="Individually" selected="True">Individually</option>
-                <option value="Map">Map</option>
-            </param>
-        <when value="Individually">
-            <repeat argument="--variant" name="variant_repeat" title="GVCF files to be imported to GenomicsDB" help="Each file must contain data for only a single sample." default="1" >
-                <param name="GVCF" type="data" format="vcf" />
-            </repeat>      
+      <conditional name="reference_conditional">
+        <param name="reference_selector" type="select" label="Number of files containing known sites" >
+            <option value="File" selected="True">File</option>
+            <option value="From Galaxy">From Galaxy</option>
+        </param>
+        <when value="File">
+            <param type="data" name="FASTA" argument="--reference" format="fasta" label="Reference file"/>
         </when>
-        <when value="Map">
-          <param type="data" name="variants" format="sample_map" label="Map of GVCFs" />
+        <when value="From Galaxy">
+          <param argument="--reference" type="select" label="Select reference genome" help="If your genome of interest is not listed, contact the Galaxy team" optional="True">
+              <options from_data_table="fasta_indexes" />
+          </param>
         </when>
-      </conditional>    
-      <repeat argument="--intervals" name="intervals_repeat" title="genomic interval over which to operate" help="-L" default="1">
-            <param name="L" type="text" value=""/>
-        </repeat>        
+      </conditional>
+      <conditional name="variant_conditional">
+        <param name="variant_selector" type="select" label="Number of files containing known sites" >
+            <option value="File" selected="True">File</option>
+            <option value="Database">Database</option>
+        </param>
+        <when value="File">
+          <param type="data" format="vcf" name="variant_list" label="Variant List"/>
+        </when>
+        <when value="Database">
+          <!-- Figure out what the genomedb actually is -->
+          <param type="data_collection" name="variant_database" label="Genomics Database" help="GenomicDB generated with GenomicsDBImport" />
+        </when>
+      </conditional>
 
       <expand macro="gatk_param_type_conditional" />
 
-
       <conditional name ="tool_params">
-      <param name="tool_param_selector" type="select" label="Basic or Advanced Tool options">
-      <option value="basic" selected="True">Basic</option>
-      <option value="advanced">Advanced</option>
-      </param>
-      <when value = "basic">
+        <param name="tool_param_selector" type="select" label="Basic or Advanced Tool options">
+          <option value="basic" selected="True">Basic</option>
+          <option value="advanced">Advanced</option>
+        </param>
+        <when value = "basic">
           <!--Do nothing-->
-      </when>
-      <when value="advanced">
-        <section name="Inputs &amp; Validation">
-          <conditional name="FASTA_TYPE">
-            <param name="FASTA_TYPE_SELECTOR" type="select" label="Number of files containing known sites" >
-                <option value="uploaded" selected="True">Uploaded</option>
-                <option value="galaxy">Galaxy</option>
-            </param>
-            <when value="File">
-                <param type="data" argument="--reference" format="fasta" label="Reference file"/>
-            </when>
-            <when value="From Galaxy">
-              <param argument="--reference" type="select" label="Select reference genome" help="If your genome of interest is not listed, contact the Galaxy team" optional="True">
-                  <options from_data_table="fasta_indexes" />
-              </param>
-            </when>
-          </conditional>
-          <param type="boolean" argument="--validate-sample-name-map" label="Enable checks on the sampleNameMap file" checked="False" />
-          <param type="boolean" argument="--disable-sequence-dictionary-validation" label="Validate inputs with sequence dictionaries" checked="True" help="Disable at your own risk!" />
-        </section>
-        <section name="Read Filters">
+        </when>
+        <when value="advanced">
+          <section name="Population Options" help="See the GATKDocs for full details on the meaning of heterozygosity">
+              <param type="integer" argument="--sample-ploidy" label="Ploidy (number of chromosomes) per sample" value="2" help="For pooled data, set to (Number of samples in each pool * Sample Ploidy)."/>
+              <param type="float" argument="--heterozygosity" label="Heterozygosity" value="0.001" help="The expected heterozygosity value used to compute prior probability that a locus is non-reference." />
+              <param type="float" argument="--heterozygosity-stdev" label="Heterozygosity Standard Deviation" value="0.01" help="Standard deviation of heterozygosity for SNP and indel calling." />
+              <param type="float" argument="--indel-heterozygosity" label="Indel Heterozygosity" value="0.000125" help="Informs the prior probability of having an indel at a site." />
+          </section>
+          <section name="Variant Calling">
+            <param type="data" format="vcf" argument="--dbsnp" label="dbSNP" help="A dbSNP VCF file" optional="True" />
+            <param type="text" argument="--input-prior" label="Input prior for calls" value="[]" help="By default, the prior specified with the argument --heterozygosity/-hets is used for variant discovery at a particular locus, using an infinite sites model" />
+            <param type="float" argument="--standard-min-confidence-threshold-for-calling" value="10.0" label="Minimum phred-scaled confidence threshold for calling variants" />
+          </section>
+          <section name="Read Filters">
             <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters"  >
-                <option value="AlignmentAgreesWithHeaderReadFilter" selected="False" />
-                <option value="AllowAllReadsReadFilter" selected="False" />
-                <option value="CigarContainsNoNOperator" selected="False" />
-                <option value="FirstOfPairReadFilter" selected="False" />
-                <option value="FlowBasedTPAttributeSymetricReadFilter" selected="False" />
-                <option value="GoodCigarReadFilter" selected="False" />
-                <option value="HasReadGroupReadFilter" selected="False" />
-                <option value="HmerQualitySymetricReadFilter" selected="False" />
-                <option value="MappedReadFilter" selected="False" />
-                <option value="MappingQualityAvailableReadFilter" selected="False" />
-                <option value="MappingQualityNotZeroReadFilter" selected="False" />
-                <option value="MatchingBasesAndQualsReadFilter" selected="False" />
-                <option value="MateDifferentStrandReadFilter" selected="False" />
-                <option value="MateOnSameContigOrNoMappedMateReadFilter" selected="False" />   
-                <option value="MateUnmappedAndUnmappedReadFilter" selected="False" />
-                <option value="MetricsReadFilter" selected="False" />
-                <option value="NonChimericOriginalAlignmentReadFilter" selected="False" />
-                <option value="NonZeroFragmentLengthReadFilter" selected="False" />
-                <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="False" />
-                <option value="NotDuplicateReadFilter" selected="False" />
-                <option value="NotProperlyPairedReadFilter" selected="False" />
-                <option value="NotSecondaryAlignmentReadFilter" selected="False" />   
-                <option value="NotSupplementaryAlignmentReadFilter" selected="False" />
-                <option value="PairedReadFilter" selected="False" />
-                <option value="PassesVendorQualityCheckReadFilter" selected="False" />
-                <option value="PrimaryLineReadFilter" selected="False" />
-                <option value="ProperlyPairedReadFilter" selected="False" />   
-                <option value="ReadGroupHasFlowOrderReadFilter" selected="False" />
-                <option value="ReadLengthEqualsCigarLengthReadFilter" selected="False" />
-                <option value="SecondOfPairReadFilter" selected="False" />
-                <option value="SeqIsStoredReadFilter" selected="False" />
-                <option value="ValidAlignmentEndReadFilter" selected="False" />
-                <option value="ValidAlignmentStartReadFilter" selected="False" />
-                <option value="WellformedFlowBasedReadFilter" selected="False" />
-                <option value="WellformedReadFilter" selected="False" />   
-                
-                <!-- Sets the tool default read filters to True (No default read filters?) -->
+              <option value="AlignmentAgreesWithHeaderReadFilter" selected="False" />
+              <option value="AllowAllReadsReadFilter" selected="False" />
+              <option value="CigarContainsNoNOperator" selected="False" />
+              <option value="FirstOfPairReadFilter" selected="False" />
+              <option value="FlowBasedTPAttributeSymetricReadFilter" selected="False" />
+              <option value="GoodCigarReadFilter" selected="False" />
+              <option value="HasReadGroupReadFilter" selected="False" />
+              <option value="HmerQualitySymetricReadFilter" selected="False" />
+              <option value="MappedReadFilter" selected="False" />
+              <option value="MappingQualityAvailableReadFilter" selected="False" />
+              <option value="MappingQualityNotZeroReadFilter" selected="False" />
+              <option value="MatchingBasesAndQualsReadFilter" selected="False" />
+              <option value="MateDifferentStrandReadFilter" selected="False" />
+              <option value="MateOnSameContigOrNoMappedMateReadFilter" selected="False" />   
+              <option value="MateUnmappedAndUnmappedReadFilter" selected="False" />
+              <option value="MetricsReadFilter" selected="False" />
+              <option value="NonChimericOriginalAlignmentReadFilter" selected="False" />
+              <option value="NonZeroFragmentLengthReadFilter" selected="False" />
+              <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="False" />
+              <option value="NotDuplicateReadFilter" selected="False" />
+              <option value="NotProperlyPairedReadFilter" selected="False" />
+              <option value="NotSecondaryAlignmentReadFilter" selected="False" />   
+              <option value="NotSupplementaryAlignmentReadFilter" selected="False" />
+              <option value="PairedReadFilter" selected="False" />
+              <option value="PassesVendorQualityCheckReadFilter" selected="False" />
+              <option value="PrimaryLineReadFilter" selected="False" />
+              <option value="ProperlyPairedReadFilter" selected="False" />   
+              <option value="ReadGroupHasFlowOrderReadFilter" selected="False" />
+              <option value="ReadLengthEqualsCigarLengthReadFilter" selected="False" />
+              <option value="SecondOfPairReadFilter" selected="False" />
+              <option value="SeqIsStoredReadFilter" selected="False" />
+              <option value="ValidAlignmentEndReadFilter" selected="False" />
+              <option value="ValidAlignmentStartReadFilter" selected="False" />
+              <option value="WellformedFlowBasedReadFilter" selected="False" />
+              <option value="WellformedReadFilter" selected="False" />   
+              
+              <!-- Sets the tool default read filters to True (Update when run) -->
             </param>
             <conditional name="AmbiguousBaseReadFilter">
                 <param type="boolean" name="AmbiguousBaseReadFilter" truevalue="Yes" falsevalue="No" label="Ambiguous Base Read Filter" />
@@ -476,52 +498,49 @@
                     </when>
                     <when value="No" />
             </conditional>
-        </section>
-        <section name="Genomic Intervals">
+          </section>
+          <section name="Genomic Intervals">
+            <repeat argument="--intervals" title="genomic interval over which to operate" help="-L">
+                <param name="L" type="text" value=""/>
+            </repeat>            
+            <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
             <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
                 <option value="ALL" selected="True">ALL</option>
                 <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
             </param>
-        </section>
-        <section name="Penalties &amp; Buffers">
+            <param type="boolean" argument="--only-output-calls-starting-in-intervals" label="Restrict variant output to sites that start within provided intervals" checked="False" />
+          </section>
+          <section name="Penalties &amp; Buffers">
             <param type="integer" argument="--cloud-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" value="40" help="0 to disable." />
             <param type="integer" argument="--cloud-index-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" optional="True" help="Defaults to cloudPrefetchBuffer" />
-        </section>
-        <section name="Performance">
-            <param type="integer" argument="--batch-size" label="Number of samples that are open at once" value="0" />
+          </section>
+          <section name="Alleles">
+            <param type="data" format="vcf" argument="--alleles" label="Set of alleles to force-call called regardless of evidence" optional="True" />
+            <repeat argument="--annotations" title="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups. -A" optional="True">
+                <param name="A" type="text" value=""/>
+            </repeat>  
+            <repeat argument="--annotation-group" title="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
+                <param name="G" type="text" value=""/>
+            </repeat>  
+            <repeat argument="--annotations-to-exclude" title="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
+                <param name="AX" type="text" value=""/>
+            </repeat>  
+            <param type="integer" argument="--max-alternate-alleles" label="Maximum number of alternate alleles to genotype" value="6" />
+            <param type="integer" argument="--max-genotype-count" label="Maximum number of genotypes to consider at any site" value="1024" />
+            <param type="boolean" argument="--annotate-with-num-discovered-alleles" label="Annotate records with the number of alternate alleles that were discovered" checked="False" />
+            <param type="boolean" argument="--disable-tool-default-annotations" label="Disable all tool default annotations" />
+            <param type="boolean" argument="--use-new-qual-calculator" label="Use the AF model for allele frequency" />
+          </section>
+          <section name="Performance">
             <param type="integer" argument="--gcs-max-retries" value="20" label="Number of times to attempt to re-initiate connection to GCS bucket channel" />
-            <!-- Check if segment/buffer should be long -->
-            <param type="integer" argument="--genomicsdb-segment-size" label="Buffer size allocated for GenomicsDB (bytes)" value="1048576" />
-            <param type="integer" argument="--genomicsdb-vcf-buffer-size" label="Buffer size for storing variant contexts (bytes)" value="16384" />
-            <param type="integer" argument="--max-num-intervals-to-import-in-parallel" label="Max number of intervals to import in parallel" />
-            <param type="integer" argument="--reader-threads" label="Number of simultaneous threads to use when opening VCFs in batches" />
-            <param type="boolean" argument="--consolidate" label="Merge all fragments into one" checked="False" />
             <param type="boolean" argument="--disable-bam-index-caching" label="Cache bam indexes (reduces memory requirements)" checked="True" />
-        </section>
-        <section name="Outputs amp; Payment">
-            <param type="boolean" argument="--sites-only-vcf-output" label="Don't emit genotype fields when writing vcf file" checked="False" />
-            <param type="text" argument="--gcs-project-for-requester-pays" label="Project to bill when accessing requester pays buckets" optional="True" />
-        </section>
+          </section>
         </when>
-    </conditional>
-
-          <!-- 
-        Omitted:
-        -overwrite-existing-genomicsdb-workspace
-
-        -create-output-bam-index, 
-        -create-output-bam-md5, 
-        -preserve-qscores-less-than,
-        -create-output-variant-index, 
-        -create-output-variant-md5 
-        -QUIET
-        -seconds-between-progress-updates
-        -TMP_DIR
-        -->
+      </conditional>
 
     </inputs>
     <outputs>
-        <data name="output1" format="zip" label="Compressed Database"/>
+        <data name="OUTPUT" type="data" format="vcf" label="VCF file"/>
     </outputs>
 
     <tests>
@@ -530,14 +549,12 @@
     <help>
       **What it does**
 
-      Import single-sample GVCFs into GenomicsDB before joint genotyping.
-      The GATK4 Best Practice Workflow for SNP and Indel calling uses GenomicsDBImport to merge GVCFs from multiple samples. GenomicsDBImport offers the same functionality as CombineGVCFs and initially came from the Intel-Broad Center for Genomics. The datastore transposes sample-centric variant information across genomic loci to make data more accessible to tools.
+      Perform joint genotyping on one or more samples pre-called with HaplotypeCaller
+      This tool is designed to perform joint genotyping on a single input, which may contain one or many samples.
+      In any case, the input samples must possess genotype likelihoods produced by HaplotypeCaller with `-ERC GVCF`
+      or `-ERC BP_RESOLUTION`.
 
-      To query the contents of the GenomicsDB datastore, use SelectVariants. See Tutorial#11813 to get started.
-
-      Details on GenomicsDB are at https://github.com/GenomicsDB/GenomicsDB/wiki. In brief, GenomicsDB utilises a data storage system optimized for storing/querying sparse arrays. Genomics data is typically sparse in that each sample has few variants with respect to the entire reference genome. GenomicsDB contains specialized code for genomics applications, such as VCF parsing and INFO field annotation calculation.
-
-      https://gatk.broadinstitute.org/hc/en-us/articles/5358869876891-GenomicsDBImport
+      https://gatk.broadinstitute.org/hc/en-us/articles/360036899732-GenotypeGVCFs
 
     </help>
 

@@ -1,0 +1,127 @@
+<tool id="gatk4_VariantRecalibrator" name="GATK4 VariantRecalibrator" version="1.0.0">
+    <description></description>
+    <requirements>
+      <requirement type="package" version="4.2.6.1">gatk4</requirement>
+    </requirements>
+    <macros>
+      <import>macros.xml</import>
+    </macros>
+    <command detect_errors="exit_code">
+    <![CDATA[
+    ]]>
+    </command>
+    <inputs>
+        <param type="text" argument="--use-annotations" label="Annotations to add to variant calls" optional="True" help="Enter each as you would into the command line '-A [NAME]'"/>
+        <conditional name="variant_conditional">
+            <param name="variant_selector" type="select" label="Number of files containing known sites" >
+                <option value="Single" selected="True">Single</option>
+                <option value="Multiple">Multiple</option>
+            </param>
+            <when value="Single">
+                <param type="data" name="VCF" format="vcf" label="Known sites"/>
+            </when>
+            <when value="Multiple">
+                <param type="data_collection" collection_type="list" name="VCF" format="vcf" label="Known sites"/>
+            </when>
+        </conditional>
+        <repeat argument="--reference" name="reference_repeat" title="Reference Sequences" help="">
+            <param type="select" name="type" label="Reference Sequence" >
+                <option value="hapmap">hapmap</option>
+                <option value="omni">omni</option>
+                <option value="1000G">1000G</option>
+                <option value="dbsnp">dbsnp</option>
+            </param>
+            <param type="boolean" name="known" label="Known" checked="False" />
+            <param type="boolean" name="truth" label="Truth" checked="False" />
+            <param type="float" name="prior" label="Prior" />
+            <param name="GVCF" type="data" format="vcf" />
+        </repeat>    
+
+        <expand macro="gatk_param_type_conditional" />
+
+        <conditional name ="tool_params">
+            <param name="tool_param_selector" type="select" label="Basic or Advanced Tool options">
+            <option value="basic" selected="True">Basic</option>
+            <option value="advanced">Advanced</option>
+            </param>
+            <when value = "basic">
+            <!--Do nothing-->
+            </when>
+            <when value="advanced">
+                <section name="Inputs">
+                <!-- Find format -->
+                    <param type="text" argument="--aggregate" label="Additional raw input variants" />
+                    <conditional name="reference_conditional">
+                        <param name="reference_selector" type="select" label="Number of files containing known sites" >
+                            <option value="File" selected="True">File</option>
+                            <option value="From Galaxy">From Galaxy</option>
+                        </param>
+                        <when value="File">
+                            <param type="data" argument="--reference" format="fasta" label="Reference file"/>
+                        </when>
+                        <when value="From Galaxy">
+                        <param argument="--reference" type="select" label="Select reference genome" help="If your genome of interest is not listed, contact the Galaxy team" optional="True">
+                            <options from_data_table="fasta_indexes" />
+                        </param>
+                        </when>
+                    </conditional>
+                    <!-- Find format -->
+                    <param type="data" format="" argument="--input-model" label="VQSR to recalibrate input variants" help="This model should be generated using a previous VariantRecalibration run with the --output-model argument." />
+                </section>
+                <section name="Input Validation">
+                    <param type="boolean" argument="--ignore-all-filters" label="Ignore all input filters" checked="False" />
+                    <param type="boolean" argument="--disable-sequence-dictionary-validation" label="Validate inputs with sequence dictionaries" checked="True" help="Disable at your own risk!" />
+                </section>
+                <section name="Recalibration">
+                    <param type="select" argument="--mode" label="Recalibration mode">
+                        <option value="SNP" selected="True">SNP</option>
+                        <option value="INDEL">INDEL</option>
+                        <option value="BOTH">BOTH</option>
+                    </param>
+                    <param type="integer" argument="--mq-cap-for-logit-jitter-transform" label="MQCap" value="0" help="If MQCap is set to 0, MQ will not be transformed."/>
+                    <param type="float" argument="--target-titv" label="Expected Ti/Tv ratio" value="2.15" help="For calculating FDR tranches and optimization curve output figures" />
+                    <!-- See if there's a list option for tranch, alleles, and others -->
+                    <param type="text" argument="--truth-sensitivity-tranche" label="Levels of truth sensitivity for slicing data" value="[100.0, 99.9, 99.0, 90.0]" />
+                    <param type="boolean" argument="--use-allele-specific-annotations" label="Attempt to use the allele-specific versions of the specified annotations" />
+                </section>
+                <section name="Genomic Intervals">
+                    <repeat argument="--intervals" title="genomic interval over which to operate" help="-L">
+                        <param name="L" type="text" value=""/>
+                    </repeat>
+                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
+                    <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
+                        <option value="ALL" selected="True">ALL</option>
+                        <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
+                    </param>
+                </section>
+                <section name="Penalties &amp; Buffers">
+                    <param type="integer" argument="--cloud-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" value="40" help="0 to disable." />
+                    <param type="integer" argument="--cloud-index-prefetch-buffer" label="Size of the cloud-only prefetch buffer (in MB)" optional="True" help="Defaults to cloudPrefetchBuffer" />
+                </section>
+                <section name="Performance">
+                    <param type="integer" argument="--gcs-max-retries" value="20" label="Number of times to attempt to re-initiate connection to GCS bucket channel" />
+                    <param type="text" argument="--gcs-project-for-requester-pays" optional="true" help="If unset, these buckets cannot be accessed." />
+                    <param type="boolean" argument="--disable-bam-index-caching" label="Cache bam indexes (reduces memory requirements)" checked="True" />
+                </section>
+                <section name="Outputs">
+                    <param type="boolean" argument="--output-model" label="Output VQSR model" checked="False" />
+                    <param type="boolean" argument="--rscript-file" label="Output rscript file generated to visualize input data and learned model" checked="False" />
+                    <param type="boolean" argument="--sites-only-vcf-output" label="Emit genotype fields when writing vcf file output." checked="False" />
+                </section>
+            </when>
+        </conditional>
+
+    </inputs>
+    <outputs>
+        <data argument="--tranches" type="data" format="tranches" label="Tranches Output"/>
+        <data argument="--output" type="data" format="recal" label="Recalibration Output" />
+        <data argument="--rscript-file" type="data" format="R" label="Plots Script" />
+        <data argument="VQSR_model" type="data" format="VQSR Model" />
+    </outputs>
+
+    <tests>
+    </tests>
+
+    <help>
+    </help>
+</tool>
