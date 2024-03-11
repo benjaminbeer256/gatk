@@ -1,34 +1,57 @@
-<tool id="test" name="test" version="0.1.0+galaxy0" python_template_version="3.5" profile="21.05">
+<tool id="gatk4_VariantRecalibrator" name="GATK4 VariantRecalibrator" version="1.0.0">
     <description></description>
     <requirements>
       <requirement type="package" version="4.2.6.1">gatk4</requirement>
     </requirements>
     <macros>
-        <import>macros.xml</import>
+      <import>macros.xml</import>
     </macros>
     <command detect_errors="exit_code">
-    <![CDATA[  
-    #*
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        *#
-        echo "works" > "$output1"
-    ]]></command>
+    <![CDATA[
+         #if $variant_conditional.variant_selector == "File"
+            ln -s "$variant_list" variants.vcf &&
+            bgzip -c variants.vcf > variants.vcf.gz &&
+            tabix -p vcf variants.vcf.gz && 
+            gatk GenotypeGVCFs --reference fasta.fa --variant variants.vcf.gz
+        #else
+    ]]>
+    </command>
     <inputs>
-
+        <repeat argument="--annotations" name="annotations_repeat" title="Annotations to add to variant calls" help="" default="1">
+            <param name="A" type="text" />
+        </repeat>  
+        <conditional name="variant_conditional">
+            <param name="variant_selector" type="select" label="Number of files containing known sites" >
+                <option value="Single" selected="True">Single</option>
+                <option value="Multiple">Multiple</option>
+            </param>
+            <when value="Single">
+                <repeat argument="--variant" name="variant_repeat" title="Variant files" help="A VCF file containing variants" default="1" >
+                    <param name="VCF" type="data" format="vcf" />
+                </repeat>   
+            </when>
+            <when value="Multiple">
+                <param type="data_collection" collection_type="list" name="VCF" format="vcf" label="Known sites"/>
+            </when>
+        </conditional>
+        <repeat argument="--resource" name="resource_repeat" title="Resource Sequences" help="" default="1">
+            <param type="select" name="type" label="Resource Sequence" >
+                <option value="hapmap">hapmap</option>
+                <option value="omni">omni</option>
+                <option value="1000G">1000G</option>
+                <option value="dbsnp">dbsnp</option>
+            </param>
+            <param type="boolean" name="known" label="Known" checked="False" />
+            <param type="boolean" name="training" label="Training" checked="False" />
+            <param type="boolean" name="truth" label="Truth" checked="False" />
+            <param type="float" name="prior" label="Prior" />
+            <param name="GVCF" type="data" format="vcf" />
+        </repeat>    
+        <param type="select" argument="--mode" label="Recalibration mode">
+            <option value="SNP" selected="True">SNP</option>
+            <option value="INDEL">INDEL</option>
+            <option value="BOTH">BOTH</option>
+        </param>
 
         <expand macro="gatk_param_type_conditional" />
 
@@ -41,18 +64,13 @@
             <!--Do nothing-->
             </when>
             <when value="advanced">
-                <param type="select" argument="--mode" label="Recalibration mode">
-                    <option value="SNP" selected="True">SNP</option>
-                    <option value="INDEL">INDEL</option>
-                    <option value="BOTH">BOTH</option>
-                </param>
                 <section name="Inputs">
                 <!-- Find format -->
                     <param type="text" argument="--aggregate" label="Additional raw input variants" />
-                    <conditional name="FASTA_TYPE">
-                        <param name="FASTA_TYPE_SELECTOR" type="select" label="Number of files containing known sites" >
-                            <option value="uploaded" selected="True">Uploaded</option>
-                            <option value="galaxy">Galaxy</option>
+                    <conditional name="reference_conditional">
+                        <param name="reference_selector" type="select" label="Number of files containing known sites" >
+                            <option value="File" selected="True">File</option>
+                            <option value="From Galaxy">From Galaxy</option>
                         </param>
                         <when value="File">
                             <param type="data" argument="--reference" format="fasta" label="Reference file"/>
@@ -119,10 +137,10 @@
 
     </inputs>
     <outputs>
-        <data argument="--tranches" name="output2" type="data" format="tranches" label="Tranches Output"/>
-        <data argument="--output" name="output1" type="data" format="vcf" label="Recalibration Output" />
-        <data argument="--rscript-file" name="output3" type="data" label="Plots Script" />
-        <data argument="VQSR_model" name="output4" type="data" format="VQSR Model" />
+        <data argument="--tranches" type="data" format="tranches" label="Tranches Output"/>
+        <data argument="--output" type="data" format="recal" label="Recalibration Output" />
+        <data argument="--rscript-file" type="data" format="R" label="Plots Script" />
+        <data argument="VQSR_model" type="data" format="VQSR Model" />
     </outputs>
 
     <tests>

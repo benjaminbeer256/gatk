@@ -9,6 +9,10 @@
 
     <command detect_errors="exit_code">
         <![CDATA[
+        ##Fix to run on arm macbook
+        export JAVA_HOME=/Users/benjaminbeer/Downloads/jdk-17.0.10.jdk/Contents/Home/bin &&
+        export PATH=/Users/benjaminbeer/Downloads/jdk-17.0.10.jdk/Contents/Home/bin:\$PATH &&
+
         echo "$FASTA" &&
         #if $reference_conditional.reference_selector == "File"
             ln -s '$FASTA' fasta.fa &&
@@ -25,45 +29,54 @@
         tabix -p vcf variants.vcf.gz && 
         gatk GenotypeGVCFs --reference fasta.fa --variant variants.vcf.gz
       #else
-        ##handle database
-        gatk GenotypeGVCFs -R "fasta.fa" -variant gendb://$database
+        ##Somewhat sketchy way to decompress database, since we don't know the name of the database
+        #import subprocess
+        #set $archive = str($variant_database)
+        #set $process = subprocess.run(["unzip", "-o", $archive, "-d", $__new_file_path__], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
+        #set $process_output = $process.stdout
+        #set $database_start = $process_output.find("inflating:") + 11
+        #set $database_end = $process_output.find("/callset.json")
+        #set $database = $process_output[$database_start:$database_end]
+        cp -r $database database &&
+
+        gatk GenotypeGVCFs -R "fasta.fa" --variant gendb://database
       #end if
       -O "$OUTPUT"
 
-        #if str($gatk_params.gatk_params_selector) == "advanced"
-            ##Input Validation
-            --read-validation-stringency "$read_validation_stringency"
-            --disable-sequence-dictionary-validation '$disable_sequence_dictionary_validation'
-            --lenient '$lenient'
+    #if str($gatk_params.gatk_params_selector) == "advanced"
+        ##Input Validation
+        --read-validation-stringency "$read_validation_stringency"
+        --disable-sequence-dictionary-validation '$disable_sequence_dictionary_validation'
+        --lenient '$lenient'
 
-            ##Genomic Intervals
-            #for $i, $interval in enumerate($exclude_intervals_repeat):
-                --exclude-intervals '${interval.XL}'
-            #end for
-            #if str($exclude_intervals_file) != "None"
-                --exclude-intervals "$exclude_intervals_file"
-            #end if
-            --interval-exclusion-padding "$interval_exclusion_padding"
-            --interval-set-rule "$interval_set_rule"
-
-            ##Performance
-            --use-jdk-deflater '$use_jdk_deflater'
-            --use-jdk-inflater '$use_jdk_inflater'
-
-            ##Macro Files
-            #if str($gatk_config_file) != "None":
-                --gatk-config-file "$gatk_config_file"
-            #end if
-            #if str($arguments_file) != "None":
-                --arguments_file "$arguments_file"
-            #end if
-            #if str($sequence_dictionary) != "None":
-                --sequence-dictionary "$sequence_dictionary"
-            #end if
-            #if str($read_index) != "None":
-                --read-index "$read_index"
-            #end if
+        ##Genomic Intervals
+        #for $i, $interval in enumerate($exclude_intervals_repeat):
+            --exclude-intervals '${interval.XL}'
+        #end for
+        #if str($exclude_intervals_file) != "None"
+            --exclude-intervals "$exclude_intervals_file"
         #end if
+        --interval-exclusion-padding "$interval_exclusion_padding"
+        --interval-set-rule "$interval_set_rule"
+
+        ##Performance
+        --use-jdk-deflater '$use_jdk_deflater'
+        --use-jdk-inflater '$use_jdk_inflater'
+
+        ##Macro Files
+        #if str($gatk_config_file) != "None":
+            --gatk-config-file "$gatk_config_file"
+        #end if
+        #if str($arguments_file) != "None":
+            --arguments_file "$arguments_file"
+        #end if
+        #if str($sequence_dictionary) != "None":
+            --sequence-dictionary "$sequence_dictionary"
+        #end if
+        #if str($read_index) != "None":
+            --read-index "$read_index"
+        #end if
+    #end if
 
       #if str($tool_param_selector) == "advanced"
         --sample-ploidy "$sample_ploidy"
@@ -267,7 +280,7 @@
         </when>
       </conditional>
       <conditional name="variant_conditional">
-        <param name="variant_selector" type="select" label="Number of files containing known sites" >
+        <param name="variant_selector" type="select" label="Variant file or database" >
             <option value="File" selected="True">File</option>
             <option value="Database">Database</option>
         </param>
@@ -275,8 +288,7 @@
           <param type="data" format="vcf" name="variant_list" label="Variant List"/>
         </when>
         <when value="Database">
-          <!-- Figure out what the genomedb actually is -->
-          <param type="data_collection" name="variant_database" label="Genomics Database" help="GenomicDB generated with GenomicsDBImport" />
+          <param type="data" name="variant_database" label="Genomics Database" help="GenomicDB generated with GenomicsDBImport. Should be a compressed directory with .zip extension" />
         </when>
       </conditional>
 
@@ -516,13 +528,13 @@
           </section>
           <section name="Alleles">
             <param type="data" format="vcf" argument="--alleles" label="Set of alleles to force-call called regardless of evidence" optional="True" />
-            <repeat argument="--annotations" title="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups. -A" optional="True">
+            <repeat argument="--annotations" name="annotations_repeat" title="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups. -A" optional="True">
                 <param name="A" type="text" value=""/>
             </repeat>  
-            <repeat argument="--annotation-group" title="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
+            <repeat argument="--annotation-group" name="group_repeat" title="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
                 <param name="G" type="text" value=""/>
             </repeat>  
-            <repeat argument="--annotations-to-exclude" title="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
+            <repeat argument="--annotations-to-exclude" name="exclude_annotations_repeat" title="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
                 <param name="AX" type="text" value=""/>
             </repeat>  
             <param type="integer" argument="--max-alternate-alleles" label="Maximum number of alternate alleles to genotype" value="6" />

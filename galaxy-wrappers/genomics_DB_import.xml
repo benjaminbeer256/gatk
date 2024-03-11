@@ -13,20 +13,20 @@
         export PATH=/Users/benjaminbeer/Downloads/jdk-17.0.10.jdk/Contents/Home/bin:\$PATH &&
 
         #if str($tool_params.tool_param_selector) == "advanced"
+            #set $reference_provided = False
             #if str($FASTA_TYPE.FASTA_TYPE_SELECTOR) == "uploaded"
                 #if str($FASTA) != "None":
                     ln -s "$FASTA" fasta.fa &&
-                    #set $reference_provided = true
-                #else 
-                    #set $reference_provided = false
-                #end if
+                    #set $reference_provided = True
             #else
                 #set $fasta_file = $fasta_source.fasta_id.fields.path
-                #set $reference_provided = true
                 ln -s "$fasta_file" fasta.fa &&
+                #set $reference_provided = True
             #end if
-            samtools faidx fasta.fa &&
-            gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict &&
+            #if $reference_provided
+                samtools faidx fasta.fa &&
+                gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict &&
+            #end if
         #end if
 
         #if $GVCF_conditional.GVCF_selector == "Individually"
