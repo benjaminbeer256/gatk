@@ -1,7 +1,7 @@
 <tool id="gatk4_GenomicsDBImport" name="GATK4 GenomicsDBImport" version="1.0.0">
     <description>- Import VCFs to GenomicsDB</description>
     <requirements>
-      <requirement type="package" version="4.2.6.1">gatk4</requirement>
+      <requirement type="package" version="4.5.0.0">gatk4</requirement>
     </requirements>
     <macros>
         <import>macros.xml</import>
@@ -238,7 +238,7 @@
                 <option value="Map">Map</option>
             </param>
         <when value="Individually">
-            <repeat argument="--variant" name="variant_repeat" title="GVCF files to be imported to GenomicsDB" help="Each file must contain data for only a single sample." default="1" >
+            <repeat argument="--variant" name="variant_repeat" label="GVCF files to be imported to GenomicsDB" help="Each file must contain data for only a single sample." default="1" >
                 <param name="GVCF" type="data" format="vcf" />
             </repeat>      
         </when>
@@ -246,7 +246,7 @@
           <param type="data" name="variants" format="sample_map" label="Map of GVCFs" />
         </when>
       </conditional>    
-      <repeat argument="--intervals" name="intervals_repeat" title="genomic interval over which to operate" help="-L" default="1">
+      <repeat argument="--intervals" name="intervals_repeat" label="Genomic interval over which to operate" help="-L" default="1">
             <param name="L" type="text" value=""/>
         </repeat>        
 

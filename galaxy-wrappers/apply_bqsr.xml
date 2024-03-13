@@ -1,14 +1,16 @@
 <tool id="gatk4_ApplyBQSR" name="GATK4 ApplyBQSR" version="1.0.0">
     <description>- Apply base quality score recalibration</description>
     <requirements>
-      <requirement type="package" version="4.2.6.1">gatk4</requirement>
+      <requirement type="package" version="4.5.0.0">gatk4</requirement>
+      <requirement type="set_environment">gatk</requirement>
+      <requirement type="package">samtools</requirement>
     </requirements>
     <macros>
       <import>macros.xml</import>
     </macros>
     <command detect_errors="exit_code"><![CDATA[
-    ln -s '$BAM' bamfile.bam &&
-    ln -s '$OUTPUT' output.bam &&
+    ln -s "$BAM" bamfile.bam &&
+    ln -s "$OUTPUT" output.bam &&
 
     #if str($FASTA_TYPE.FASTA_TYPE_SELECTOR) == "uploaded"
         ln -s "$FASTA" fasta.fa &&
@@ -22,17 +24,17 @@
 
     gatk BuildBamIndex -I bamfile.bam &&
 
-    gatk ApplyBQSR -I bamfile.bam -R fasta.fa --bqsr-recal-file '$RECAL_TABLE' -O '$OUTPUT'
+    gatk ApplyBQSR -I bamfile.bam -R fasta.fa --bqsr-recal-file "$RECAL_TABLE" -O "$OUTPUT"
 
     #if str($gatk_params.gatk_params_selector) == "advanced"
         ##Input Validation
         --read-validation-stringency "$read_validation_stringency"
-        --disable-sequence-dictionary-validation '$disable_sequence_dictionary_validation'
-        --lenient '$lenient'
+        --disable-sequence-dictionary-validation "$disable_sequence_dictionary_validation"
+        --lenient "$lenient"
 
         ##Genomic Intervals
         #for $i, $interval in enumerate($exclude_intervals_repeat):
-            --exclude-intervals '${interval.XL}'
+            --exclude-intervals "${interval.XL}"
         #end for
         #if str($exclude_intervals_file) != "None"
             --exclude-intervals "$exclude_intervals_file"
@@ -41,8 +43,8 @@
         --interval-set-rule "$interval_set_rule"
 
         ##Performance
-        --use-jdk-deflater '$use_jdk_deflater'
-        --use-jdk-inflater '$use_jdk_inflater'
+        --use-jdk-deflater "$use_jdk_deflater"
+        --use-jdk-inflater "$use_jdk_inflater"
 
         ##Macro Files
         #if str($gatk_config_file) != "None":
@@ -192,31 +194,31 @@
 
         ##Genomic Intervals
         #for $i, $interval in enumerate($intervals_repeat):
-            --intervals '${interval.L}'
+            --intervals "${interval.L}"
         #end for
         --interval-padding "$interval_padding"
         --interval-merging-rule "$interval_merging_rule"
 
         ##Penalties & Buffers
-        --cloud-prefetch-buffer '$cloud_prefetch_buffer'
+        --cloud-prefetch-buffer "$cloud_prefetch_buffer"
         #if $cloud_index_prefetch_buffer:
-            --cloud-index-prefetch-buffer '$cloud_index_prefetch_buffer'
+            --cloud-index-prefetch-buffer "$cloud_index_prefetch_buffer"
         #end if
 
         ##Read Qualities
-        --use-original-qualities '$use_original_qualities'
+        --use-original-qualities "$use_original_qualities"
         #if $static_quantized_quals:
-            --static-quantized-quals '$static_quantized_quals'
-            --round-down-quantized '$round_down_quantized'
+            --static-quantized-quals "$static_quantized_quals"
+            --round-down-quantized "$round_down_quantized"
         #else if $quantize_quals:
-            --quantize-quals '$quantize_quals'
+            --quantize-quals "$quantize_quals"
         #end if
-        --preserve-qscores-less-than '$preserve_qscores_less_than'
-        --global-qscore-prior '$global_qscore_prior'
+        --preserve-qscores-less-than "$preserve_qscores_less_than"
+        --global-qscore-prior "$global_qscore_prior"
 
         ##Performance
-        --gcs-max-retries '$gcs_max_retries'
-        --disable-bam-index-caching '$disable_bam_index_caching'
+        --gcs-max-retries "$gcs_max_retries"
+        --disable-bam-index-caching "$disable_bam_index_caching"
     #end if
     ]]>
     </command>
@@ -448,10 +450,10 @@
             </conditional>
           </section>
           <section name="Genomic Intervals">
-            <repeat argument="--intervals" name="intervals_repeat" title="genomic interval over which to operate" help="-L">
+            <repeat argument="--intervals" name="intervals_repeat" label="Genomic interval over which to operate" help="-L">
                 <param name="L" type="text" value=""/>
             </repeat>            
-            <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
+            <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, "-L 1:100" with a padding value of 20 would turn into "-L 1:80-120"."/>
             <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
                 <option value="ALL" selected="True">ALL</option>
                 <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
@@ -463,11 +465,11 @@
           </section>
           <section name="Read Qualities">
             <param type="boolean" argument="--use-original-qualities" label="Use original base qualities (no BQSR/recalibration)" checked="False" help="Use the original base qualities (that were in the data before BQSR/recalibration) which are stored in the OQ tag, if present, rather than post-recalibration quality scores." />
-            <param type="boolean" argument="--emit-original-quals" label="Emit original quality scores" checked="False" help="Output original qualities under 'OQ' tag" />
+            <param type="boolean" argument="--emit-original-quals" label="Emit original quality scores" checked="False" help="Output original qualities under "OQ" tag" />
             <param type="text" argument="--static-quantized-quals" label="Sort quality scores to a given number of static scores" optional="True" help="List the scores, separated by spaces.  Cannot be used as the same time as --quantize-quals" />
             <param type="boolean" argument="--round-down-quantized" label="Round qualities down to the nearest quantized qualities" checked="False" help="Only works with --static-quantized-quals option" />
             <param type="integer" argument="--quantize-quals" label="Quantize quality scores a given number of levels" optional="True" help="Cannot be used with --static-quantized-quals or --round-down-quantized" />
-            <param type="integer" argument="--preserve-qscores-less-than" label="Don't recalibrate bases with quality scores less than" value="6" help="Values less than 6 can lead to problems downstream" />
+            <param type="integer" argument="--preserve-qscores-less-than" label="Don"t recalibrate bases with quality scores less than" value="6" help="Values less than 6 can lead to problems downstream" />
             <param type="float" argument="--global-qscore-prior" label="Global Qscore Bayesian prior to use for BQSR" value="-1.0" help="This will be used as a flat prior for all mismatching quality scores instead of the reported quality score." />
         </section>
           <section name="Performance">

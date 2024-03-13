@@ -45,7 +45,7 @@ def open_file_from_option( filename, mode='rb' ):
 
 
 def html_report_from_directory( html_out, dir ):
-    html_out.write( '<html>\n<head>\n<title>Galaxy - GATK Output</title>\n</head>\n<body>\n<p/>\n<ul>\n' )
+    html_out.write( '<html>\n<head>\n<label>Galaxy - GATK Output</label>\n</head>\n<body>\n<p/>\n<ul>\n' )
     for fname in sorted( os.listdir( dir ) ):
         html_out.write(  '<li><a href="%s">%s</a></li>\n' % ( fname, fname ) )
     html_out.write( '</ul>\n</body>\n</html>\n' )

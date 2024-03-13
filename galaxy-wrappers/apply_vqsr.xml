@@ -1,13 +1,14 @@
-<tool id="gatk4_VariantRecalibrator" name="GATK4 VariantRecalibrator" version="1.0.0">
-    <description>- Build a recalibration model to score variant quality for filtering purposes</description>
+<tool id="gatk4_ApplyVQSR" name="GATK4 ApplyVQSR" version="1.0.0">
+    <description>- Apply a score cutoff to filter variants based on a recalibration table</description>
     <requirements>
       <requirement type="package" version="4.5.0.0">gatk4</requirement>
     </requirements>
     <macros>
       <import>macros.xml</import>
     </macros>
+
     <command detect_errors="exit_code">
-    <![CDATA[
+        <![CDATA[
         ##Fix to run on arm macbook
         export JAVA_HOME=/Users/benjaminbeer/Downloads/jdk-17.0.10.jdk/Contents/Home/bin &&
         export PATH=/Users/benjaminbeer/Downloads/jdk-17.0.10.jdk/Contents/Home/bin:\$PATH &&
@@ -36,23 +37,10 @@
             tabix -p vcf '${i}.gz' &&
         #end for
 
-        #for $i, $resource in enumerate($resource_repeat):
-            bgzip -c ${resource.GVCF} > reference_${i}.gz &&
-            tabix -p vcf reference_${i}.gz &&
-        #end for
+        gatk ApplyVQSR --output '$output1' --recal-file '$recal_file'
 
-        gatk VariantRecalibrator --output "$output1" --tranches-file "$output2"
-
-        #for $i, $variant in enumerate($variant_repeat):
-            --variant ${i}.gz
-        #end for
-
-        #for $i, $resource in enumerate($resource_repeat):
-            --resource:${resource.type},known=${resource.known},training=${resource.training},truth=${resource.truth},prior=${resource.prior} reference_${i}.gz
-        #end for
-
-        #for $annotation in $annotations_repeat:
-            -an ${annotation.A}
+        #for $i, $file in enumerate($variant_repeat):
+            --variant '${i}.gz'
         #end for
 
         #if str($gatk_params.gatk_params_selector) == "advanced"
@@ -91,22 +79,27 @@
         #end if
 
         #if str($tool_params.tool_param_selector) == "advanced"
-            --mode "$mode"
-
+            --mode '$mode'
             ##Inputs
-            #if str($aggregate) != "None":
-                --aggregate "$aggregate" 
-            #end if
             #if $reference_provided
                 --reference fasta.fa
             #end if
-            #if str($input_model) != "None":
-                --input-model "$input_model"
+            #if str($tranches_file) != "None":
+                --tranches-file $tranches_file
             #end if
 
-            ##Input Validation
+            ##Filtering
             --ignore-all-filters "$ignore_all_filters"
-            --disable-sequence-dictionary-validation "$disable_sequence_dictionary_validation"
+            #for $i, $item in enumerate($ignore_filter_repeat):
+                --ignore-filter ${item.filter}
+            #end for
+            #if $truth_sensitivity_filter_level
+                --truth-sensitivity-filter-level "$truth_sensitivity_filter_level"
+            #end if
+            #if $lod_score_cutoff
+                --lod-score-cutoff "$lod_score_cutoff"
+            #end if
+            --use-allele-specific-annotations "$use_allele_specific_annotations"
 
             ## Read Filters
             --disable-tool-default-read-filters
@@ -237,28 +230,6 @@
                 #end if
             #end if
 
-            ##Statistics Constants
-            --target-titv "$target_titv"
-            --bad-lod-score-cutoff "$bad_lod_score_cutoff"
-            --dirichlet "$dirichlet"
-            --prior-counts "$prior_counts"
-            --shrinkage "$shrinkage"
-            --standard-deviation-threshold "$standard_deviation_threshold"
-            --k-means-iterations "$k_means_iterations"
-            --max-attempts "$max_attempts"
-            --max-gaussians "$max_gaussians"
-            --max-negative-gaussians "$max_negative_gaussians"
-            --max-iterations "$max_iterations"
-            --maximum-training-variants "$maximum_training_variants"
-            --minimum-bad-variants "$minimum_bad_variants"
-            --mq-cap-for-logit-jitter-transform "$mq_cap_for_logit_jitter_transform"
-            #set $tranche_list = $truth_sensitivity_tranche.replace('[', '').replace(']', '').replace(' ', '').split(",")
-            #for $number in $tranche_list:
-                 --truth-sensitivity-tranche '$number'
-            #end for
-            --use-allele-specific-annotations "$use_allele_specific_annotations"
-            --trust-all-polymorphic "$trust_all_polymorphic"
-
             ##Genomic Intervals
             #for $i, $interval in enumerate($intervals_repeat):
                 --intervals '${interval.L}'
@@ -274,40 +245,15 @@
 
             ##Performance
             --gcs-max-retries "$gcs_max_retries"
-            --disable-bam-index-caching "$disable_bam_index_caching"
-            --gcs-project-for-requester-pays "$gcs_project_for_requester_pays"
-
-            ##Outputs
-            #if $rscript_file
-                --rscript-file "$output3"
-            #end if
-            #if $output_model
-                --output-model "$output4"
-            #end if
-            --sites-only-vcf-output "$sites_only_vcf_output"
+            --disable-bam-index-caching "$disable_bam_index_caching"            
         #end if
-    ]]>
+        ]]>
     </command>
     <inputs>
         <repeat argument="--variant" name="variant_repeat" label="Variant files" help="A VCF file containing variants" default="1" >
-            <param name="VCF" type="data" format="vcf" />
+              <param name="VCF" type="data" format="vcf" />
         </repeat>
-        <repeat argument="--resource" name="resource_repeat" label="Resource Sequences" help="" default="1">
-            <param type="select" name="type" label="Resource Sequence" >
-                <option value="hapmap">hapmap</option>
-                <option value="omni">omni</option>
-                <option value="1000G">1000G</option>
-                <option value="dbsnp">dbsnp</option>
-            </param>
-            <param type="boolean" name="known" label="Known" checked="False" />
-            <param type="boolean" name="training" label="Training" checked="False" />
-            <param type="boolean" name="truth" label="Truth" checked="False" />
-            <param type="float" name="prior" label="Prior" />
-            <param name="GVCF" type="data" format="vcf" />
-        </repeat>    
-        <repeat argument="--annotations" name="annotations_repeat" label="Annotations to add to variant calls" help="" default="1">
-            <param name="A" type="text" value="" />
-        </repeat>  
+        <param type="data" argument="--recal-file" label="Recalibration File" help="The input recal file used by ApplyRecalibration" />
 
         <expand macro="gatk_param_type_conditional" />
 
@@ -325,16 +271,15 @@
                     <option value="INDEL">INDEL</option>
                     <option value="BOTH">BOTH</option>
                 </param>
-                <section name="Inputs">
+                <section name="Inputs"> 
                 <!-- Find format -->
-                    <param type="data" format="vcf" argument="--aggregate" label="Additional raw input variants" optional="True" />
-                    <conditional name="FASTA_TYPE">
+                    <conditional name="FASTA_TYPE"> 
                         <param name="FASTA_TYPE_SELECTOR" type="select" label="Reference File" >
                             <option value="uploaded" selected="True">Uploaded</option>
                             <option value="galaxy">Galaxy</option>
                         </param>
                         <when value="uploaded">
-                            <param type="data" argument="--reference" name="FASTA" format="fasta" label="Reference file" optional="true" />
+                            <param type="data" argument="--reference" name="FASTA" format="fasta" label="Reference file" optional="True" />
                         </when>
                         <when value="galaxy">
                         <param argument="--reference" type="select" label="Select reference genome" help="If your genome of interest is not listed, contact the Galaxy team" optional="True">
@@ -342,11 +287,16 @@
                         </param>
                         </when>
                     </conditional>
-                    <!-- Find format -->
-                    <param type="data" argument="--input-model" label="VQSR to recalibrate input variants" help="This model should be generated using a previous VariantRecalibration run with the --output-model argument." optional="True" />
+                    <param type="data" argument="--tranches-file" label="Tranches file to cut the data" optional="True" />
                 </section>
-                <section name="Input Validation">
-                    <param type="boolean" argument="--ignore-all-filters" label="Ignore all input filters" checked="False" />
+                <section name="Filtering">
+                    <param type="boolean" argument="--ignore-all-filters" label="Ignore all input filters" checked="False" /> A
+                    <repeat argument="--ignore-filter" label="Ignore Filter" name="ignore_filter_repeat">
+                      <param type="text" name="filter" label="Filter to ignore" />
+                    </repeat>
+                    <param type="float" argument="--truth-sensitivity-filter-level" label="Truth sensitivity level to start filtering" optional="True" />
+                    <param type="float" argument="--lod-score-cutoff" label="VQSLOD score below which to filter" optional="True" />
+                    <param type="boolean" argument="--use-allele-specific-annotations" label="Filter each allele based on input tranches and alle-specific .recal file" checked="False" />
                 </section>
                 <section name="Read Filters">
                     <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters"  >
@@ -545,25 +495,6 @@
                             <when value="No" />
                     </conditional>
                 </section>
-                <section name="Statistics Constants">
-                    <param type="float" argument="--target-titv" label="Expected Ti/Tv ratio" value="2.15" help="For calculating FDR tranches and optimization curve output figures" />
-                    <param type="float" argument="--bad-lod-score-cutoff" label="LOD score cutoff for bad variants" value="5.0" />
-                    <param type="float" argument="--dirichlet" label="Dirichlet parameter for Bayes algorism" value="0.001" />
-                    <param type="float" argument="--prior-counts" label="Number of prior counts in variational Bayes algorithm" value="20.0" />
-                    <param type="float" argument="--shrinkage" label="Shrinkage parameter in Bayes algorithm" value="1.0" />
-                    <param type="float" argument="--standard-deviation-threshold" label="Annotation value divergence threshold" value="10.0" />
-                    <param type="integer" argument="--k-means-iterations" label="Number of k-means iterations" value="100" />
-                    <param type="integer" argument="--max-attempts" label="Number of attempts to build model before failing" value="1" help="The first successfully built model will be kept" />
-                    <param type="integer" argument="--max-gaussians" label="Max number of Gaussians for positive model" value="8" help="For the variational Bayes algorithm" />
-                    <param type="integer" argument="--max-negative-gaussians" label="Max number of Gaussians for negative model" value="2" help="For the variational Bayes algorithm" />
-                    <param type="integer" argument="--max-iterations" label="Max number of VBEM iterations" value="150" help="Usually ends when convergence is detected" />
-                    <param type="integer" argument="--maximum-training-variants" label="Maximum number of training variants" value="2500000" help="Training sets larger than this will be downsampled randomly" />
-                    <param type="integer" argument="--minimum-bad-variants" label="Min number of bad variants" value="1000" help="Minimum number of worst scoring variants for Gaussian mixture model" />
-                    <param type="integer" argument="--mq-cap-for-logit-jitter-transform" label="Apply logit transform and jitter to MQ values" value="0" help="MQ is capped at a max value (60 for bwa-mem) when the alignment is considered perfect." />
-                    <param type="text" argument="--truth-sensitivity-tranche" label="Levels of truth sensitivity for slicing data" value="[100.0, 99.9, 99.0, 90.0]" />
-                    <param type="boolean" argument="--use-allele-specific-annotations" label="Attempt to use the allele-specific versions of the specified annotations" checked="False" />
-                    <param type="boolean" argument="--trust-all-polymorphic" label="Trust that training sets only contain polymorphic sites" checked="False" help="Enabling greatly speeds up computation" />
-                </section>
                 <section name="Genomic Intervals">
                     <repeat argument="--intervals" name="intervals_repeat" label="Genomic interval over which to operate" help="-L">
                         <param name="L" type="text" value="" />
@@ -581,38 +512,28 @@
                 <section name="Performance">
                     <param type="integer" argument="--gcs-max-retries" label="Number of times to attempt to re-initiate connection to GCS bucket channel" value="20" />
                     <param type="boolean" argument="--disable-bam-index-caching" label="Cache bam indexes (reduces memory requirements)" checked="True" />
-                    <param type="text" argument="--gcs-project-for-requester-pays" optional="true" help="If unset, these buckets cannot be accessed." />
-                </section>
-                <section name="Outputs">
-                    <param type="boolean" argument="--rscript-file" label="Output Rscript file generated to visualize input data and learned model" checked="False" />
-                    <param type="boolean" argument="--output-model" label="Output VQSR model" checked="False" />
-                    <param type="boolean" argument="--sites-only-vcf-output" label="Emit genotype fields when writing vcf file output." checked="False" />
                 </section>
             </when>
         </conditional>
-
-    </inputs>
-    <outputs>
-        <data argument="--output" name="output1" type="data" format="vcf" label="Recalibration Output" />
-        <data argument="--tranches" name="output2" type="data" format="tranches" label="Tranches Output"/>
-        <data argument="--rscript-file" name="output3" type="data" label="Plots Script">
-            <filter>tool_params['tool_param_selector'] == 'advanced' and tool_params['Outputs']['rscript_file']</filter>
-        </data>
-        <data argument="VQSR_model" name="output4" type="data" label="VQSR Model">
-            <filter>tool_params['tool_param_selector'] == 'advanced' and tool_params['Outputs']['output_model']</filter>
-        </data>
-    </outputs>
-
+      </inputs>
+      <outputs>
+        xz c x<data argument="--output" name="output1" type="data" format="vcf" label="Annotated VCF" />
+      </outputs>
     <tests>
     </tests>
 
     <help>
       **What it does**
 
-      Build a recalibration model to score variant quality for filtering purposes
-      This tool performs the first pass in a two-stage process called Variant Quality Score Recalibration (VQSR). Specifically, it builds the model that will be used in the second step to actually filter variants. This model attempts to describe the relationship between variant annotations (such as QD, MQ and ReadPosRankSum, for example) and the probability that a variant is a true genetic variant versus a sequencing or data processing artifact. It is developed adaptively based on "true sites" provided as input, typically HapMap sites and those sites found to be polymorphic on the Omni 2.5M SNP chip array (in humans). This adaptive error model can then be applied to both known and novel variation discovered in the call set of interest to evaluate the probability that each call is real. The result is a score called the VQSLOD that gets added to the INFO field of each variant. This score is the log odds of being a true variant versus being false under the trained Gaussian mixture model.
+      Apply a score cutoff to filter variants based on a recalibration table
+      This tool performs the second pass in a two-stage process called Variant Quality Score Recalibration (VQSR). Specifically, it applies filtering to the input variants based on the recalibration table produced in the first step by VariantRecalibrator and a target sensitivity value, which the tool matches internally to a VQSLOD score cutoff based on the model's estimated sensitivity to a set of true variants.
 
-      https://gatk.broadinstitute.org/hc/en-us/articles/5358906115227-VariantRecalibrator
+      The filter determination is not just a pass/fail process. The tool evaluates for each variant which "tranche", or slice of the dataset, it falls into in terms of sensitivity to the truthset. Variants in tranches that fall below the specified truth sensitivity filter level have their FILTER field annotated with the corresponding tranche level. This results in a callset that is filtered to the desired level but retains the information necessary to increase sensitivity if needed.
+
+      To be clear, please note that by "filtered", we mean that variants failing the requested tranche cutoff are marked as filtered in the output VCF; they are not discarded unless the option to do so is specified.
+
+      https://gatk.broadinstitute.org/hc/en-us/articles/5358890204187-ApplyVQSR
 
     </help>
+
 </tool>

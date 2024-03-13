@@ -1,7 +1,7 @@
 <tool id="gatk4_GenotypeGVCFs" name="GATK4 GenotypeGVCFs" version="1.0.0">
     <description>- Perform joint genotyping on one or more samples pre-called with HaplotypeCaller</description>
     <requirements>
-      <requirement type="package" version="4.2.6.1">gatk4</requirement>
+      <requirement type="package" version="4.5.0.0">gatk4</requirement>
     </requirements>
     <macros>
       <import>macros.xml</import>
@@ -512,7 +512,7 @@
             </conditional>
           </section>
           <section name="Genomic Intervals">
-            <repeat argument="--intervals" title="genomic interval over which to operate" help="-L">
+            <repeat argument="--intervals" label="Genomic interval over which to operate" help="-L">
                 <param name="L" type="text" value=""/>
             </repeat>            
             <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
@@ -528,13 +528,13 @@
           </section>
           <section name="Alleles">
             <param type="data" format="vcf" argument="--alleles" label="Set of alleles to force-call called regardless of evidence" optional="True" />
-            <repeat argument="--annotations" name="annotations_repeat" title="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups. -A" optional="True">
+            <repeat argument="--annotations" name="annotations_repeat" label="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups. -A" optional="True">
                 <param name="A" type="text" value=""/>
             </repeat>  
-            <repeat argument="--annotation-group" name="group_repeat" title="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
+            <repeat argument="--annotation-group" name="group_repeat" label="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
                 <param name="G" type="text" value=""/>
             </repeat>  
-            <repeat argument="--annotations-to-exclude" name="exclude_annotations_repeat" title="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
+            <repeat argument="--annotations-to-exclude" name="exclude_annotations_repeat" label="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
                 <param name="AX" type="text" value=""/>
             </repeat>  
             <param type="integer" argument="--max-alternate-alleles" label="Maximum number of alternate alleles to genotype" value="6" />

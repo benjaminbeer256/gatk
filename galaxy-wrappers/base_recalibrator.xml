@@ -1,16 +1,15 @@
 <tool id="gatk4_BaseRecalibrator" name="GATK4 BaseRecalibrator" version="0.1.0+galaxy0" python_template_version="3.5" profile="21.05">
     <description>- Generates recalibration table for Base Quality Score Recalibration (BQSR)</description>
     <requirements>
-      <requirement type="package" version="4.2.6.1">gatk4</requirement>
+      <requirement type="package" version="4.5.0.0">gatk4</requirement>
+      <requirement type="set_environment">gatk</requirement>
+      <requirement type="package">samtools</requirement>
     </requirements>
     <macros>
         <import>macros.xml</import>
     </macros>
     <command detect_errors="exit_code">
-    <![CDATA[  
-    echo "BAM variable is '$BAM'" >> "$output1" &&
-    echo "FASTA variable is '$FASTA_TYPE.FASTA'" >> "$output1" &&
-    
+    <![CDATA[      
     ln -s "$BAM" bamfile.bam &&
     gatk BuildBamIndex -I bamfile.bam &&
 
@@ -25,14 +24,14 @@
     gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict &&
 
     #for $i, $file in enumerate($known_sites_repeat):
-        bgzip -c ${file.VCF} > '${i}.gz' &&
-        tabix -p vcf '${i}.gz' &&
+        bgzip -c ${file.VCF} > "${i}.gz" &&
+        tabix -p vcf "${i}.gz" &&
     #end for
 
     gatk BaseRecalibrator -I bamfile.bam -R fasta.fa
 
     #for $i, $file in enumerate($known_sites_repeat):
-        --known-sites '${i}.gz' 
+        --known-sites "${i}.gz" 
     #end for
 
     -O "$output1"
@@ -40,12 +39,12 @@
     #if str($gatk_params.gatk_params_selector) == "advanced"
         ##Input Validation
         --read-validation-stringency "$read_validation_stringency"
-        --disable-sequence-dictionary-validation '$disable_sequence_dictionary_validation'
-        --lenient '$lenient'
+        --disable-sequence-dictionary-validation "$disable_sequence_dictionary_validation"
+        --lenient "$lenient"
 
         ##Genomic Intervals
         #for $i, $interval in enumerate($exclude_intervals_repeat):
-            --exclude-intervals '${interval.XL}'
+            --exclude-intervals "${interval.XL}"
         #end for
         #if str($exclude_intervals_file) != "None"
             --exclude-intervals "$exclude_intervals_file"
@@ -54,8 +53,8 @@
         --interval-set-rule "$interval_set_rule"
 
         ##Performance
-        --use-jdk-deflater '$use_jdk_deflater'
-        --use-jdk-inflater '$use_jdk_inflater'
+        --use-jdk-deflater "$use_jdk_deflater"
+        --use-jdk-inflater "$use_jdk_inflater"
 
         ##Macro Files
         #if str($gatk_config_file) != "None":
@@ -77,7 +76,6 @@
         #if $low_quality_tail:
             --low-quality-tail "$low_quality_tail"
         #end if
-        --disable-sequence-dictionary-validation "$disable_sequence_dictionary_validation"
 
         ## Read Filters
         --disable-tool-default-read-filters
@@ -211,7 +209,7 @@
 
         ## Genomic Intervals
         #for $i, $interval in enumerate($intervals_repeat):
-            --intervals '${interval.L}'
+            --intervals "${interval.L}"
         #end for
         --interval-padding "$interval_padding"
         --interval-merging-rule "$interval_merging_rule"
@@ -275,7 +273,6 @@
             <when value="advanced">
                 <section name="Input Validation">
                     <param type="integer" argument="--low-quality-tail" label="Minimum quality for tails of reads to be considered" value="2" />
-                    <param type="boolean" argument="--disable-sequence-dictionary-validation" label="Validate inputs with sequence dictionaries" checked="True" help="Disable at your own risk!" />
                 </section>
                 <section name="Read Filters">
                     <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters"  >
@@ -482,10 +479,10 @@
                     </conditional>
                 </section>
                 <section name="Genomic Intervals">
-                    <repeat argument="--intervals" name="intervals_repeat" title="genomic interval over which to operate" help="-L">
+                    <repeat argument="--intervals" name="intervals_repeat" label="Genomic interval over which to operate" help="-L">
                         <param name="L" type="text" value=""/>
                     </repeat>                    
-                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
+                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, "-L 1:100" with a padding value of 20 would turn into "-L 1:80-120"."/>
                     <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
                         <option value="ALL" selected="True">ALL</option>
                         <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>

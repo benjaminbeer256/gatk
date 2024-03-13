@@ -89,7 +89,7 @@
       </section> -->
       
       <section name="Genomic Intervals">
-        <repeat name="exclude_intervals_repeat" argument="--exclude-intervals" title="Excluded intervals manually" help="-XL" optional="True">
+        <repeat name="exclude_intervals_repeat" argument="--exclude-intervals" label="Excluded intervals manually" help="-XL" optional="True">
           <param name="XL" type="text" value=""/>
         </repeat>      
         <param type="data" name="exclude_intervals_file" argument="--exclude-intervals" label="Excluded intervals with file" optional="True" help="File containing genomic intervals to be excluded (e.g. chr24 or chr24:100-200)" />

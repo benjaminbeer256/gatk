@@ -1,7 +1,7 @@
 <tool id="gatk4_HaplotypeCaller" name="GATK4 HaplotypeCaller" version="1.0.0">
     <description>- Call germline SNPs and indels via local re-assembly of haplotypes</description>
     <requirements>
-        <requirement type="package" version="4.2.6.1">gatk4</requirement>
+        <requirement type="package" version="4.5.0.0">gatk4</requirement>
     </requirements>
     <macros>
         <import>macros.xml</import>
@@ -28,12 +28,12 @@
     #if str($gatk_params.gatk_params_selector) == "advanced"
         ##Input Validation
         --read-validation-stringency "$read_validation_stringency"
-        --disable-sequence-dictionary-validation '$disable_sequence_dictionary_validation'
-        --lenient '$lenient'
+        --disable-sequence-dictionary-validation "$disable_sequence_dictionary_validation"
+        --lenient "$lenient"
 
         ##Genomic Intervals
         #for $i, $interval in enumerate($exclude_intervals_repeat):
-            --exclude-intervals '${interval.XL}'
+            --exclude-intervals "${interval.XL}"
         #end for
         #if str($exclude_intervals_file) != "None"
             --exclude-intervals "$exclude_intervals_file"
@@ -42,8 +42,8 @@
         --interval-set-rule "$interval_set_rule"
 
         ##Performance
-        --use-jdk-deflater '$use_jdk_deflater'
-        --use-jdk-inflater '$use_jdk_inflater'
+        --use-jdk-deflater "$use_jdk_deflater"
+        --use-jdk-inflater "$use_jdk_inflater"
 
         ##Macro Files
         #if str($gatk_config_file) != "None":
@@ -220,9 +220,9 @@
         --interval-merging-rule "$interval_merging_rule"
 
         ## Penalties & Buffers
-        --cloud-prefetch-buffer '$cloud_prefetch_buffer'
+        --cloud-prefetch-buffer "$cloud_prefetch_buffer"
         #if $cloud_index_prefetch_buffer
-            --cloud-index-prefetch-buffer '$cloud_index_prefetch_buffer'
+            --cloud-index-prefetch-buffer "$cloud_index_prefetch_buffer"
         #end if
 
         ## Alleles
@@ -266,64 +266,64 @@
 
     #if str($advanced_tool_params.advanced_tool_param_selector) == "advanced"
         ##Boolean
-        --adaptive-pruning '$adaptive_pruning'
-        --all-site-pls '$all_site_pls'
-        --allow-non-unique-kmers-in-ref '$allow_non_unique_kmers_in_ref'
-        --debug-assembly '$debug_assembly'
-        --disable-optimizations '$disable_optimizations'
-        --disable-tool-default-annotations '$disable_tool_default_annotations'
-        --do-not-run-physical-phasing '$do_not_run_physical_phasing'
-        --dont-increase-kmer-sizes-for-cycles '$dont_increase_kmer_sizes_for_cycles'
-        --dont-use-soft-clipped-bases '$dont_use_soft_clipped_bases'
-        --enable-all-annotations '$enable_all_annotations'
-        --floor-blocks '$floor_blocks'
-        --force-active '$force_active'
-        --force-call-filtered-alleles '$force_call_filtered_alleles'
-        --recover-all-dangling-branches '$recover_all_dangling_branches'
-        --use-filtered-reads-for-annotations '$use_filtered_reads_for_annotations'
+        --adaptive-pruning "$adaptive_pruning"
+        --all-site-pls "$all_site_pls"
+        --allow-non-unique-kmers-in-ref "$allow_non_unique_kmers_in_ref"
+        --debug-assembly "$debug_assembly"
+        --disable-optimizations "$disable_optimizations"
+        --disable-tool-default-annotations "$disable_tool_default_annotations"
+        --do-not-run-physical-phasing "$do_not_run_physical_phasing"
+        --dont-increase-kmer-sizes-for-cycles "$dont_increase_kmer_sizes_for_cycles"
+        --dont-use-soft-clipped-bases "$dont_use_soft_clipped_bases"
+        --enable-all-annotations "$enable_all_annotations"
+        --floor-blocks "$floor_blocks"
+        --force-active "$force_active"
+        --force-call-filtered-alleles "$force_call_filtered_alleles"
+        --recover-all-dangling-branches "$recover_all_dangling_branches"
+        --use-filtered-reads-for-annotations "$use_filtered_reads_for_annotations"
         ##Integers
-        --indel-size-to-eliminate-in-ref-model '$indel_size_to_eliminate_in_ref_model'
-        --assembly-region-padding '$assembly_region_padding'
-        --max-alternate-alleles '$max_alternate_alleles'
-        --max-assembly-region-size '$max_assembly_region_size'
-        --max-genotype-count '$max_genotype_count'
-        --max-mnp-distance '$max_mnp_distance'
-        --max-num-haplotypes-in-population '$max_num_haplotypes_in_population'
-        --max-prob-propagation-distance '$max_prob_propagation_distance'
-        --max-unpruned-variants '$max_unpruned_variants'
-        --min-assembly-region-size '$min_assembly_region_size'
-        --min-dangling-branch-length '$min_dangling_branch_length'
-        --min-pruning '$min_pruning'
-        --num-pruning-samples '$num_pruning_samples'
-        --pair-hmm-gap-continuation-penalty '$pair_hmm_gap_continuation_penalty'
-        --phred-scaled-global-read-mismapping-rate '$phred_scaled_global_read_mismapping_rate'
-        --pruning-lod-threshold '$pruning_lod_threshold'
-        --active-probability-threshold '$active_probability_threshold'
-        --adaptive-pruning-initial-error-rate '$adaptive_pruning_initial_error_rate'
+        --indel-size-to-eliminate-in-ref-model "$indel_size_to_eliminate_in_ref_model"
+        --assembly-region-padding "$assembly_region_padding"
+        --max-alternate-alleles "$max_alternate_alleles"
+        --max-assembly-region-size "$max_assembly_region_size"
+        --max-genotype-count "$max_genotype_count"
+        --max-mnp-distance "$max_mnp_distance"
+        --max-num-haplotypes-in-population "$max_num_haplotypes_in_population"
+        --max-prob-propagation-distance "$max_prob_propagation_distance"
+        --max-unpruned-variants "$max_unpruned_variants"
+        --min-assembly-region-size "$min_assembly_region_size"
+        --min-dangling-branch-length "$min_dangling_branch_length"
+        --min-pruning "$min_pruning"
+        --num-pruning-samples "$num_pruning_samples"
+        --pair-hmm-gap-continuation-penalty "$pair_hmm_gap_continuation_penalty"
+        --phred-scaled-global-read-mismapping-rate "$phred_scaled_global_read_mismapping_rate"
+        --pruning-lod-threshold "$pruning_lod_threshold"
+        --active-probability-threshold "$active_probability_threshold"
+        --adaptive-pruning-initial-error-rate "$adaptive_pruning_initial_error_rate"
 
         ##Text
-        #set $kmer_list = $kmer_size.replace('[', '').replace(']', '').replace(' ', '').split(",")
+        #set $kmer_list = $kmer_size.replace("[", "").replace("]", "").replace(" ", "").split(",")
         #for $kmer in $kmer_list:
-            --kmer-size '$kmer'
+            --kmer-size "$kmer"
         #end for
-        #set $bands = $gvcf_gq_bands.replace('[', '').replace(']', '').replace(' ', '').split(",")
+        #set $bands = $gvcf_gq_bands.replace("[", "").replace("]", "").replace(" ", "").split(",")
         #for $band in $bands:
-            --gvcf-gq-bands '$band'
+            --gvcf-gq-bands "$band"
         #end for
 
         ##Repeats
         #for $i, $file in enumerate($comparison_repeat):
-            --exclude-intervals '${file.vcf}'
+            --exclude-intervals "${file.vcf}"
         #end for
         #for $i, $float in enumerate($prior_repeat):
-            --exclude-intervals '${float.prior}'
+            --exclude-intervals "${float.prior}"
         #end for
 
         ##Enum
-        --emit-ref-confidence '$emit_ref_confidence'
-        --pair-hmm-implementation '$pair_hmm_implementation'
-        --pcr-indel-model '$pcr_indel_model'
-        --smith-waterman '$smith_waterman'
+        --emit-ref-confidence "$emit_ref_confidence"
+        --pair-hmm-implementation "$pair_hmm_implementation"
+        --pcr-indel-model "$pcr_indel_model"
+        --smith-waterman "$smith_waterman"
     #end if
     ]]>
     </command>
@@ -575,10 +575,10 @@
                     </conditional>
                 </section>
                 <section name="Genomic Intervals">
-                    <repeat argument="--intervals" name="intervals_repeat" title="genomic interval over which to operate" help="-L">
+                    <repeat argument="--intervals" name="intervals_repeat" label="Genomic interval over which to operate" help="-L">
                         <param name="L" type="text" value=""/>
                     </repeat>                    
-                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
+                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, "-L 1:100" with a padding value of 20 would turn into "-L 1:80-120"."/>
                     <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
                         <option value="ALL" selected="True">ALL</option>
                         <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
@@ -590,13 +590,13 @@
                 </section>
                 <section name="Alleles">
                     <param type="data" format="vcf" argument="--alleles" label="Set of alleles to force-call called regardless of evidence" optional="True" />
-                    <repeat argument="--annotations"  name="annotations_repeat" title="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups.">
+                    <repeat argument="--annotations"  name="annotations_repeat" label="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups.">
                         <param name="A" type="text" value=""/>
                     </repeat>
-                    <repeat argument="--annotation-group" name="group_repeat" title="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
+                    <repeat argument="--annotation-group" name="group_repeat" label="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
                         <param name="G" type="text" value=""/>
                     </repeat>
-                    <repeat argument="--annotations-to-exclude" name="exclude_annotations_repeat" title="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
+                    <repeat argument="--annotations-to-exclude" name="exclude_annotations_repeat" label="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
                         <param name="AX" type="text" value=""/>
                     </repeat>
                     <param type="boolean" argument="--annotate-with-num-discovered-alleles" label="Annotate records with the number of alternate alleles that were discovered" checked="False" />
@@ -622,7 +622,7 @@
                         <option value="EMIT_ALL_CONFIDENT_SITES">EMIT ALL CONFIDENT SITES</option>
                         <option value="EMIT_ALL_ACTIVE_SITES">EMIT ALL ACTIVE SITES</option>
                     </param>
-                    <param type="boolean" argument="--sites-only-vcf-output" label="Don't emit genotype fields when writing vcf" checked="False"/>
+                    <param type="boolean" argument="--sites-only-vcf-output" label="Don"t emit genotype fields when writing vcf" checked="False"/>
                     <param type="boolean" argument="--assembly-region-out" label="Output assembly regions" checked="False" />
                     <param type="boolean" argument="--bam-output" label="Output bam file" />
                     <param type="select" argument="--bam-writer-type" label="Haplotypes written to bam">
@@ -677,10 +677,10 @@
                 <param type="float" argument="--adaptive-pruning-initial-error-rate" value="0.001" />
                 <param type="text" argument="--kmer-size" value="[10, 25]" help="Enter list as if it were a Python list instantiation"/>
                 <param type="text" argument="--gvcf-gq-bands" value="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 70, 80, 90, 99]" help="Enter list as if it were a Python list instantiation" />
-                <repeat argument="--input-prior" name="prior_repeat" title="Input prior for calls" help="By default, the prior specified with the argument --heterozygosity/-hets is used for variant discovery at a particular locus, using an infinite sites model.">
+                <repeat argument="--input-prior" name="prior_repeat" label="Input prior for calls" help="By default, the prior specified with the argument --heterozygosity/-hets is used for variant discovery at a particular locus, using an infinite sites model.">
                     <param name="prior" label="Prior" type="float" optional="True"/>
                 </repeat>  
-                <repeat argument="--comparison" name="comparison_repeat" title="Comparison VCF files" help="If a call overlaps with a record from the provided comp track, the INFO field will be annotated as such in the output.">
+                <repeat argument="--comparison" name="comparison_repeat" label="Comparison VCF files" help="If a call overlaps with a record from the provided comp track, the INFO field will be annotated as such in the output.">
                     <param name="vcf" label="Comparison File" type="data" format="vcf" optional="True"/>
                 </repeat>  
                 <param type="select" argument="--emit-ref-confidence" label="Mode for emitting reference confidence scores">
@@ -717,7 +717,7 @@
     <outputs>
         <data name="OUTPUT" type="data" format="vcf" label="GVCF file"/>
         <data name="ASSEMBLY_REGION_OUTPUT" type="data" format="tabular" label="Assembly Region Out">
-            <filter>tool_params['tool_param_selector'] == 'advanced' and tool_params['Outputs']['assembly_region_out']</filter>
+            <filter>tool_params["tool_param_selector"] == "advanced" and tool_params["Outputs"]["assembly_region_out"]</filter>
         </data>
     </outputs>
 
