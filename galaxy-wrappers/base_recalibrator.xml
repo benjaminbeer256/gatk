@@ -1,13 +1,9 @@
 <tool id="gatk4_BaseRecalibrator" name="GATK4 BaseRecalibrator" version="0.1.0+galaxy0" python_template_version="3.5" profile="21.05">
     <description>- Generates recalibration table for Base Quality Score Recalibration (BQSR)</description>
-    <requirements>
-      <requirement type="package" version="4.5.0.0">gatk4</requirement>
-      <requirement type="set_environment">gatk</requirement>
-      <requirement type="package">samtools</requirement>
-    </requirements>
     <macros>
         <import>macros.xml</import>
     </macros>
+    <expand macro="requirements" />
     <command detect_errors="exit_code">
     <![CDATA[      
     ln -s "$BAM" bamfile.bam &&
@@ -78,11 +74,10 @@
         #end if
 
         ## Read Filters
-        --disable-tool-default-read-filters
+
         #for $filter in $tool_filters:
             --read-filter "$filter"
         #end for
-
         #if $AmbiguousBaseReadFilter:
             --read-filter "AmbiguousBaseReadFilter"
             #if $ambig_filter_frac:
@@ -91,17 +86,14 @@
                 --ambig-filter-bases "$ambig_filter_bases"
             #end if
         #end if
-
         #if $ExcessiveEndClippedReadFilter:
             --read-filter "ExcessiveEndClippedReadFilter" 
             --max-clipped-bases "$max_clipped_bases"
         #end if
-
         #if $FlowBasedTPAttributeValidReadFilter:
             --read-filter "FlowBasedTPAttributeValidReadFilter" 
             --read-filter-max-hmer "$read_filter_max_hmer"
         #end if
-
         #if $FragmentLengthReadFilter:
             --read-filter "FragmentLengthReadFilter" 
             #if $max_fragment_length:
@@ -111,22 +103,18 @@
                 --min-fragment-length "$min_fragment_length"
             #end if
         #end if
-
         #if $IntervalOverlapReadFilter:
             --read-filter "IntervalOverlapReadFilter" 
             --keep-intervals "$keep_intervals"
         #end if
-
         #if $JexlExpressionReadTagValueFilter:
             --read-filter "JexlExpressionReadTagValueFilter" 
             --read-filter-expression "$read_filter_expression"
         #end if
-
         #if $LibraryReadFilter:
             --read-filter "LibraryReadFilter" 
             --library "$library"
         #end if
-
         #if $MappingQualityReadFilter:
             --read-filter "MappingQualityReadFilter" 
             #if $minimum_mapping_quality:
@@ -136,38 +124,31 @@
                 --maximum-mapping-quality "$maximum_mapping_quality"
             #end if
         #end if
-
         #if $MateDistantReadFilter:
             --read-filter "MateDistantReadFilter" 
             --mate-too-distant-length "$mate_too_distant_length"
         #end if
-
         #if $OverclippedReadFilter:
             --read-filter "OverclippedReadFilter" 
             --filter-too-short "$filter_too_short"
             --dont-require-soft-clips-both-ends "$dont_require_soft_clips_both_ends"
         #end if
-
         #if $PlatformReadFilter:
             --read-filter "PlatformReadFilter" 
             --platform-filter-name "$platform_filter_name"
         #end if
-
         #if $PlatformUnitReadFilter:
             --read-filter "PlatformUnitReadFilter" 
             --black-listed-lanes "$black_listed_lanes"
         #end if
-
         #if $ReadGroupBlackListReadFilter:
             --read-filter "ReadGroupBlackListReadFilter" 
             --read-group-black-list "$read_group_black_list"
         #end if
-
         #if $ReadGroupReadFilter:
             --read-filter "ReadGroupReadFilter" 
             --keep-read-group "$keep_read_group"
         #end if
-
         #if $ReadLengthReadFilter:
             --read-filter "ReadLengthReadFilter" 
             --max-read-length "$max_read_length"
@@ -175,28 +156,23 @@
                 --min-read-length "$min_read_length"
             #end if
         #end if
-
         #if $ReadNameReadFilter:
             --read-filter "ReadNameReadFilter" 
             --read-name "$read_name"
         #end if
-
         #if $ReadStrandFilter:
             --read-filter "ReadStrandFilter" 
             --keep-reverse-strand-only "$keep_reverse_strand_only"
         #end if
-
         #if $ReadTagValueFilter:
             --read-filter "ReadTagValueFilter" 
             --read-filter-tag "$read_filter_tag"
             --read-filter-tag-comp "$read_filter_tag_comp"
         #end if
-
         #if $SampleReadFilter:
             --read-filter "SampleReadFilter" 
             --sample "$sample"
         #end if
-
         #if $SoftClippedReadFilter:
             --read-filter "SoftClippedReadFilter"
             --invert-soft-clip-ratio-filter "$invert_soft_clip_ratio_filter"
@@ -206,6 +182,7 @@
                 --soft-clipped-leading-trailing-ratio "$soft_clipped_leading_trailing_ratio"
             #end if
         #end if
+        --disable-tool-default-read-filters "$disable_tool_default_read_filters"
 
         ## Genomic Intervals
         #for $i, $interval in enumerate($intervals_repeat):
@@ -274,7 +251,7 @@
                 <section name="Input Validation">
                     <param type="integer" argument="--low-quality-tail" label="Minimum quality for tails of reads to be considered" value="2" />
                 </section>
-                <section name="Read Filters">
+                <section name="Read Filters" help="Filters to apply in addition to tool-defaults">
                     <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters"  >
                         <option value="AlignmentAgreesWithHeaderReadFilter" selected="False" />
                         <option value="AllowAllReadsReadFilter" selected="False" />
@@ -311,15 +288,6 @@
                         <option value="ValidAlignmentStartReadFilter" selected="False" />
                         <option value="WellformedFlowBasedReadFilter" selected="False" />
                         <option value="WellformedReadFilter" selected="False" />   
-                        
-                        <!-- Sets the tool default read filters to True -->
-                        <option value="MappingQualityNotZeroReadFilter" selected="True"/>
-                        <option value="MappingQualityAvailableReadFilter" selected="True"/>
-                        <option value="MappedReadFilter" selected="True"/>
-                        <option value="NotSecondaryAlignmentReadFilter" selected="True"/>
-                        <option value="NotDuplicateReadFilter" selected="True"/>
-                        <option value="PassesVendorQualityCheckReadFilter" selected="True"/>
-                        <option value="WellformedReadFilter" selected="True"/>
                     </param>
                     <conditional name="AmbiguousBaseReadFilter">
                         <param type="boolean" name="AmbiguousBaseReadFilter" truevalue="Yes" falsevalue="No" label="Ambiguous Base Read Filter" />
@@ -477,12 +445,13 @@
                             </when>
                             <when value="No" />
                     </conditional>
+                    <param type="boolean" argument="--disable-tool-default-read-filters" checked="False" />
                 </section>
                 <section name="Genomic Intervals">
-                    <repeat argument="--intervals" name="intervals_repeat" label="Genomic interval over which to operate" help="-L">
+                    <repeat argument="--intervals" name="intervals_repeat" title="Genomic interval over which to operate" help="-L">
                         <param name="L" type="text" value=""/>
                     </repeat>                    
-                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, "-L 1:100" with a padding value of 20 would turn into "-L 1:80-120"."/>
+                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, -L 1:100 with a padding value of 20 would turn into -L 1:80-120."/>
                     <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
                         <option value="ALL" selected="True">ALL</option>
                         <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>

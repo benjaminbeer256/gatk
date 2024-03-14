@@ -17,77 +17,7 @@
         </param>
         <param type="boolean" argument="--disable-sequence-dictionary-validation" label="Disable sequence dictionary validation" checked="False" help="Disable at your own risk!" />
         <param type="boolean" argument="--lenient" label="Process VCF files leniently" checked="False" />
-      </section>
-
-      <!-- <section name="Read Filters">
-        <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters" help="" >
-          <option value="AlignmentAgreesWithHeaderReadFilter" selected="False" />
-          <option value="AllowAllReadsReadFilter" selected="False" />
-          <option value="AmbiguousBaseReadFilter" selected="False" />
-          <option value="CigarContainsNoNOperator" selected="False" />
-          <option value="ExcessiveEndClippedReadFilter" selected="False" />
-          <option value="FirstOfPairReadFilter" selected="False" />
-          <option value="FlowBasedTPAttributeSymetricReadFilter" selected="False" />
-          <option value="FlowBasedTPAttributeValidReadFilter" selected="False" />
-          <option value="FlowBasedTPAttributeValidReadFilter" selected="False" />
-          <option value="FragmentLengthReadFilter" selected="False" />
-          <option value="GoodCigarReadFilter" selected="False" />
-          <option value="HasReadGroupReadFilter" selected="False" />
-          <option value="HmerQualitySymetricReadFilter" selected="False" />
-          <option value="IntervalOverlapReadFilter" selected="False" />
-          <option value="JexlExpressionReadTagValueFilter" selected="False" />
-          <option value="LibraryReadFilter" selected="False" />   
-          <option value="MappedReadFilter" selected="False" />
-          <option value="MappingQualityAvailableReadFilter" selected="False" />
-          <option value="MappingQualityNotZeroReadFilter" selected="False" />
-          <option value="MappingQualityReadFilter" selected="False" />
-          <option value="MatchingBasesAndQualsReadFilter" selected="False" />
-          <option value="MateDifferentStrandReadFilter" selected="False" />
-          <option value="MateDistantReadFilter" selected="False" />
-          <option value="MateOnSameContigOrNoMappedMateReadFilter" selected="False" />   
-          <option value="MateUnmappedAndUnmappedReadFilter" selected="False" />
-          <option value="MetricsReadFilter" selected="False" />
-          <option value="NonChimericOriginalAlignmentReadFilter" selected="False" />
-          <option value="NonZeroFragmentLengthReadFilter" selected="False" />
-          <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="False" />
-          <option value="NotDuplicateReadFilter" selected="False" />
-          <option value="NotProperlyPairedReadFilter" selected="False" />
-          <option value="NotSecondaryAlignmentReadFilter" selected="False" />   
-          <option value="NotSupplementaryAlignmentReadFilter" selected="False" />
-          <option value="OverclippedReadFilter" selected="False" />
-          <option value="PairedReadFilter" selected="False" />
-          <option value="PassesVendorQualityCheckReadFilter" selected="False" />
-          <option value="PlatformReadFilter" selected="False" />
-          <option value="PlatformUnitReadFilter" selected="False" />
-          <option value="PrimaryLineReadFilter" selected="False" />
-          <option value="ProperlyPairedReadFilter" selected="False" />   
-          <option value="ReadGroupBlackListReadFilter" selected="False" />
-          <option value="ReadGroupHasFlowOrderReadFilter" selected="False" />
-          <option value="ReadGroupReadFilter" selected="False" />
-          <option value="ReadLengthEqualsCigarLengthReadFilter" selected="False" />
-          <option value="ReadLengthReadFilter" selected="False" />
-          <option value="ReadNameReadFilter" selected="False" />
-          <option value="ReadStrandFilter" selected="False" />
-          <option value="ReadTagValueFilter" selected="False" />   
-          <option value="SampleReadFilter" selected="False" />
-          <option value="SecondOfPairReadFilter" selected="False" />
-          <option value="SeqIsStoredReadFilter" selected="False" />
-          <option value="SoftClippedReadFilter" selected="False" />
-          <option value="ValidAlignmentEndReadFilter" selected="False" />
-          <option value="ValidAlignmentStartReadFilter" selected="False" />
-          <option value="WellformedFlowBasedReadFilter" selected="False" />
-          <option value="WellformedReadFilter" selected="False" />   
-
-          <option value="MappingQualityNotZeroReadFilter" selected="True"/>
-          <option value="MappingQualityAvailableReadFilter" selected="True"/>
-          <option value="MappedReadFilter" selected="True"/>
-          <option value="NotSecondaryAlignmentReadFilter" selected="True"/>
-          <option value="NotDuplicateReadFilter" selected="True"/>
-          <option value="PassesVendorQualityCheckReadFilter" selected="True"/>
-          <option value="WellformedReadFilter" selected="True"/>
-        </param>                
-      </section> -->
-      
+      </section>      
       <section name="Genomic Intervals">
         <repeat name="exclude_intervals_repeat" argument="--exclude-intervals" label="Excluded intervals manually" help="-XL" optional="True">
           <param name="XL" type="text" value=""/>
@@ -120,5 +50,14 @@
       </section>
     </when>
     </conditional>
+  </xml>
+  <xml name="requirements">
+    <requirements>
+      <requirement type="package" version="4.5.0.0">gatk4</requirement>
+      <requirement type="set_environment">gatk</requirement>
+      <requirement type="package">samtools</requirement>
+      <requirement type="package">tabix</requirement>
+      <requirement type="package">bgzip</requirement>   
+    </requirements>
   </xml>
 </macros>

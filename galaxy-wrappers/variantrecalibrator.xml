@@ -17,7 +17,7 @@
     ]]>
     </command>
     <inputs>
-        <repeat argument="--annotations" name="annotations_repeat" label="Annotations to add to variant calls" help="" default="1">
+        <repeat argument="--annotations" name="annotations_repeat" title="Annotations to add to variant calls" help="" default="1">
             <param name="A" type="text" />
         </repeat>  
         <conditional name="variant_conditional">
@@ -26,7 +26,7 @@
                 <option value="Multiple">Multiple</option>
             </param>
             <when value="Single">
-                <repeat argument="--variant" name="variant_repeat" label="Variant files" help="A VCF file containing variants" default="1" >
+                <repeat argument="--variant" name="variant_repeat" title="Variant files" help="A VCF file containing variants" default="1" >
                     <param name="VCF" type="data" format="vcf" />
                 </repeat>   
             </when>
@@ -34,7 +34,7 @@
                 <param type="data_collection" collection_type="list" name="VCF" format="vcf" label="Known sites"/>
             </when>
         </conditional>
-        <repeat argument="--resource" name="resource_repeat" label="Resource Sequences" help="" default="1">
+        <repeat argument="--resource" name="resource_repeat" title="Resource Sequences" help="" default="1">
             <param type="select" name="type" label="Resource Sequence" >
                 <option value="hapmap">hapmap</option>
                 <option value="omni">omni</option>

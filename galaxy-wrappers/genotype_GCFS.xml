@@ -1,12 +1,9 @@
 <tool id="gatk4_GenotypeGVCFs" name="GATK4 GenotypeGVCFs" version="1.0.0">
     <description>- Perform joint genotyping on one or more samples pre-called with HaplotypeCaller</description>
-    <requirements>
-      <requirement type="package" version="4.5.0.0">gatk4</requirement>
-    </requirements>
     <macros>
       <import>macros.xml</import>
     </macros>
-
+    <expand macro="requirements" />
     <command detect_errors="exit_code">
         <![CDATA[
         ##Fix to run on arm macbook
@@ -15,7 +12,7 @@
 
         echo "$FASTA" &&
         #if $reference_conditional.reference_selector == "File"
-            ln -s '$FASTA' fasta.fa &&
+            ln -s "$FASTA" fasta.fa &&
         #else 
             #set $fasta_file = $fasta_source.fasta_id.fields.path
             ln -s "$fasta_file" fasta.fa &&
@@ -23,250 +20,233 @@
         samtools faidx fasta.fa --output fasta.fa.fai &&
         gatk CreateSequenceDictionary -R fasta.fa -O fasta.dict &&
 
-      #if $variant_conditional.variant_selector == "File"
-        ln -s "$variant_list" variants.vcf &&
-        bgzip -c variants.vcf > variants.vcf.gz &&
-        tabix -p vcf variants.vcf.gz && 
-        gatk GenotypeGVCFs --reference fasta.fa --variant variants.vcf.gz
-      #else
-        ##Somewhat sketchy way to decompress database, since we don't know the name of the database
-        #import subprocess
-        #set $archive = str($variant_database)
-        #set $process = subprocess.run(["unzip", "-o", $archive, "-d", $__new_file_path__], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
-        #set $process_output = $process.stdout
-        #set $database_start = $process_output.find("inflating:") + 11
-        #set $database_end = $process_output.find("/callset.json")
-        #set $database = $process_output[$database_start:$database_end]
-        cp -r $database database &&
+        #if $variant_conditional.variant_selector == "File"
+            ln -s "$variant_list" variants.vcf &&
+            bgzip -c variants.vcf > variants.vcf.gz &&
+            tabix -p vcf variants.vcf.gz && 
+            gatk GenotypeGVCFs --reference fasta.fa --variant variants.vcf.gz
+        #else
+            ##Somewhat sketchy way to decompress database, since we don't know the name of the database once it's decompressed
+            #import subprocess
+            #set $archive = str($variant_database)
+            #set $process = subprocess.run(["unzip", "-o", $archive, "-d", $__new_file_path__], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False)
+            #set $process_output = $process.stdout
+            #set $database_start = $process_output.find("inflating:") + 11
+            #set $database_end = $process_output.find("/callset.json")
+            #set $database = $process_output[$database_start:$database_end]
+            cp -r $database database &&
 
-        gatk GenotypeGVCFs -R "fasta.fa" --variant gendb://database
-      #end if
-      -O "$OUTPUT"
-
-    #if str($gatk_params.gatk_params_selector) == "advanced"
-        ##Input Validation
-        --read-validation-stringency "$read_validation_stringency"
-        --disable-sequence-dictionary-validation '$disable_sequence_dictionary_validation'
-        --lenient '$lenient'
-
-        ##Genomic Intervals
-        #for $i, $interval in enumerate($exclude_intervals_repeat):
-            --exclude-intervals '${interval.XL}'
-        #end for
-        #if str($exclude_intervals_file) != "None"
-            --exclude-intervals "$exclude_intervals_file"
+            gatk GenotypeGVCFs -R "fasta.fa" --variant gendb://database
         #end if
-        --interval-exclusion-padding "$interval_exclusion_padding"
-        --interval-set-rule "$interval_set_rule"
+        -O "$OUTPUT"
 
-        ##Performance
-        --use-jdk-deflater '$use_jdk_deflater'
-        --use-jdk-inflater '$use_jdk_inflater'
+        #if str($gatk_params.gatk_params_selector) == "advanced"
+            ##Input Validation
+            --read-validation-stringency "$read_validation_stringency"
+            --disable-sequence-dictionary-validation "$disable_sequence_dictionary_validation"
+            --lenient "$lenient"
 
-        ##Macro Files
-        #if str($gatk_config_file) != "None":
-            --gatk-config-file "$gatk_config_file"
-        #end if
-        #if str($arguments_file) != "None":
-            --arguments_file "$arguments_file"
-        #end if
-        #if str($sequence_dictionary) != "None":
-            --sequence-dictionary "$sequence_dictionary"
-        #end if
-        #if str($read_index) != "None":
-            --read-index "$read_index"
-        #end if
-    #end if
+            ##Genomic Intervals
+            #for $i, $interval in enumerate($exclude_intervals_repeat):
+                --exclude-intervals "${interval.XL}"
+            #end for
+            #if str($exclude_intervals_file) != "None"
+                --exclude-intervals "$exclude_intervals_file"
+            #end if
+            --interval-exclusion-padding "$interval_exclusion_padding"
+            --interval-set-rule "$interval_set_rule"
 
-      #if str($tool_param_selector) == "advanced"
-        --sample-ploidy "$sample_ploidy"
-        --heterozygosity "$heterozygosity"
-        --heterozygosity-stdev "$heterozygosity_stdev"
-        --indel-heterozygosity "$indel_heterozygosity"
+            ##Performance
+            --use-jdk-deflater "$use_jdk_deflater"
+            --use-jdk-inflater "$use_jdk_inflater"
 
-        ## Variant Calling
-        #if str($dbNSP) != "None":
-            --dbsnp "$dbsnp"
-        #end if
-        #set $prior_list = $input_prior.replace('[', '').replace(']', '').replace(' ', '').split(",")
-        #for $prior in $prior_list:
-            --input-prior'$prior'
-        #end for
-        --standard-min-confidence-threshold-for-calling "$standard_min_confidence_threshold_for_calling"
-
-        ## Read Filters
-        --disable-tool-default-read-filters
-        #for $filter in $tool_filters:
-            --read-filter "$filter"
-        #end for
-
-        #if $AmbiguousBaseReadFilter:
-            --read-filter "AmbiguousBaseReadFilter"
-            #if $ambig_filter_frac
-                --ambig-filter-frac "$ambig_filter_frac"
-            #else
-                --ambig-filter-bases "$ambig_filter_bases"
+            ##Macro Files
+            #if str($gatk_config_file) != "None":
+                --gatk-config-file "$gatk_config_file"
+            #end if
+            #if str($arguments_file) != "None":
+                --arguments_file "$arguments_file"
+            #end if
+            #if str($sequence_dictionary) != "None":
+                --sequence-dictionary "$sequence_dictionary"
+            #end if
+            #if str($read_index) != "None":
+                --read-index "$read_index"
             #end if
         #end if
 
-        #if $ExcessiveEndClippedReadFilter
-            --read-filter "ExcessiveEndClippedReadFilter" 
-            --max-clipped-bases "$max_clipped_bases"
-        #end if
+        #if str($tool_params.tool_param_selector) == "advanced"
+            --sample-ploidy "$sample_ploidy"
+            --heterozygosity "$heterozygosity"
+            --heterozygosity-stdev "$heterozygosity_stdev"
+            --indel-heterozygosity "$indel_heterozygosity"
 
-        #if $FlowBasedTPAttributeValidReadFilter
-            --read-filter "FlowBasedTPAttributeValidReadFilter" 
-            --read-filter-max-hmer "$read_filter_max_hmer"
-        #end if
-
-        #if $FragmentLengthReadFilter
-            --read-filter "FragmentLengthReadFilter" 
-            #if $max_fragment_length
-                --max-fragment-length "$max_fragment_length"
+            ## Variant Calling
+            #if str($dbsnp) != "None":
+                --dbsnp "$dbsnp"
             #end if
-            #if $min_fragment_length
-                --min-fragment-length "$min_fragment_length"
+            ##gatk does not recognize --input-prior so commented out
+            #*
+            #set $prior_list = $input_prior.replace("[", "").replace("]", "").replace(" ", "").split(",")
+            #for $prior in $prior_list:
+                --input-prior "$prior"
+            #end for
+            *#
+            --standard-min-confidence-threshold-for-calling "$standard_min_confidence_threshold_for_calling"
+
+            ## Read Filters
+            #for $filter in $tool_filters:
+                --read-filter "$filter"
+            #end for
+            #if $AmbiguousBaseReadFilter:
+                --read-filter "AmbiguousBaseReadFilter"
+                #if $ambig_filter_frac
+                    --ambig-filter-frac "$ambig_filter_frac"
+                #else
+                    --ambig-filter-bases "$ambig_filter_bases"
+                #end if
             #end if
-        #end if
-
-        #if $IntervalOverlapReadFilter
-            --read-filter "IntervalOverlapReadFilter" 
-            --keep-intervals "$keep_intervals"
-        #end if
-
-        #if $JexlExpressionReadTagValueFilter
-            --read-filter "JexlExpressionReadTagValueFilter" 
-            --read-filter-expression "$read_filter_expression"
-        #end if
-
-        #if $LibraryReadFilter
-            --read-filter "LibraryReadFilter" 
-            --library "$library"
-        #end if
-
-        #if $MappingQualityReadFilter
-            --read-filter "MappingQualityReadFilter" 
-            #if $minimum_mapping_quality
-                --minimum-mapping-quality "$minimum_mapping_quality"
+            #if $ExcessiveEndClippedReadFilter
+                --read-filter "ExcessiveEndClippedReadFilter" 
+                --max-clipped-bases "$max_clipped_bases"
             #end if
-            #if $maximum_mapping_quality
-                --maximum-mapping-quality "$maximum_mapping_quality"
+            #if $FlowBasedTPAttributeValidReadFilter
+                --read-filter "FlowBasedTPAttributeValidReadFilter" 
+                --read-filter-max-hmer "$read_filter_max_hmer"
             #end if
-        #end if
-
-        #if $MateDistantReadFilter
-            --read-filter "MateDistantReadFilter" 
-            --mate-too-distant-length "$mate_too_distant_length"
-        #end if
-
-        #if $OverclippedReadFilter
-            --read-filter "OverclippedReadFilter" 
-            --filter-too-short "$filter_too_short"
-            --dont-require-soft-clips-both-ends "$dont_require_soft_clips_both_ends"
-        #end if
-
-        #if $PlatformReadFilter
-            --read-filter "PlatformReadFilter" 
-            --platform-filter-name "$platform_filter_name"
-        #end if
-
-        #if $PlatformUnitReadFilter
-            --read-filter "PlatformUnitReadFilter" 
-            --black-listed-lanes "$black_listed_lanes"
-        #end if
-
-        #if $ReadGroupBlackListReadFilter
-            --read-filter "ReadGroupBlackListReadFilter" 
-            --read-group-black-list "$read_group_black_list"
-        #end if
-
-        #if $ReadGroupReadFilter
-            --read-filter "ReadGroupReadFilter" 
-            --keep-read-group "$keep_read_group"
-        #end if
-
-        #if $ReadLengthReadFilter
-            --read-filter "ReadLengthReadFilter" 
-            --max-read-length "$max_read_length"
-            #if $min_read_length
-                --min-read-length "$min_read_length"
+            #if $FragmentLengthReadFilter
+                --read-filter "FragmentLengthReadFilter" 
+                #if $max_fragment_length
+                    --max-fragment-length "$max_fragment_length"
+                #end if
+                #if $min_fragment_length
+                    --min-fragment-length "$min_fragment_length"
+                #end if
             #end if
-        #end if
-
-        #if $ReadNameReadFilter
-            --read-filter "ReadNameReadFilter" 
-            --read-name "$read_name"
-        #end if
-
-        #if $ReadStrandFilter
-            --read-filter "ReadStrandFilter" 
-            --keep-reverse-strand-only "$keep_reverse_strand_only"
-        #end if
-
-        #if $ReadTagValueFilter
-            --read-filter "ReadTagValueFilter" 
-            --read-filter-tag "$read_filter_tag"
-            --read-filter-tag-comp "$read_filter_tag_comp"
-        #end if
-
-        #if $SampleReadFilter
-            --read-filter "SampleReadFilter" 
-            --sample "$sample"
-        #end if
-
-        #if $SoftClippedReadFilter:
-            --read-filter "SoftClippedReadFilter"
-            --invert-soft-clip-ratio-filter "$invert_soft_clip_ratio_filter"
-            #if $soft_clipped_ratio_threshold
-                --soft-clipped-ratio-threshold "$soft_clipped_ratio_threshold"
-            #else
-                --soft-clipped-leading-trailing-ratio "$soft_clipped_leading_trailing_ratio"
+            #if $IntervalOverlapReadFilter
+                --read-filter "IntervalOverlapReadFilter" 
+                --keep-intervals "$keep_intervals"
             #end if
-        #end if
+            #if $JexlExpressionReadTagValueFilter
+                --read-filter "JexlExpressionReadTagValueFilter" 
+                --read-filter-expression "$read_filter_expression"
+            #end if
+            #if $LibraryReadFilter
+                --read-filter "LibraryReadFilter" 
+                --library "$library"
+            #end if
+            #if $MappingQualityReadFilter
+                --read-filter "MappingQualityReadFilter" 
+                #if $minimum_mapping_quality
+                    --minimum-mapping-quality "$minimum_mapping_quality"
+                #end if
+                #if $maximum_mapping_quality
+                    --maximum-mapping-quality "$maximum_mapping_quality"
+                #end if
+            #end if
+            #if $MateDistantReadFilter
+                --read-filter "MateDistantReadFilter" 
+                --mate-too-distant-length "$mate_too_distant_length"
+            #end if
+            #if $OverclippedReadFilter
+                --read-filter "OverclippedReadFilter" 
+                --filter-too-short "$filter_too_short"
+                --dont-require-soft-clips-both-ends "$dont_require_soft_clips_both_ends"
+            #end if
+            #if $PlatformReadFilter
+                --read-filter "PlatformReadFilter" 
+                --platform-filter-name "$platform_filter_name"
+            #end if
+            #if $PlatformUnitReadFilter
+                --read-filter "PlatformUnitReadFilter" 
+                --black-listed-lanes "$black_listed_lanes"
+            #end if
+            #if $ReadGroupBlackListReadFilter
+                --read-filter "ReadGroupBlackListReadFilter" 
+                --read-group-black-list "$read_group_black_list"
+            #end if
+            #if $ReadGroupReadFilter
+                --read-filter "ReadGroupReadFilter" 
+                --keep-read-group "$keep_read_group"
+            #end if
+            #if $ReadLengthReadFilter
+                --read-filter "ReadLengthReadFilter" 
+                --max-read-length "$max_read_length"
+                #if $min_read_length
+                    --min-read-length "$min_read_length"
+                #end if
+            #end if
+            #if $ReadNameReadFilter
+                --read-filter "ReadNameReadFilter" 
+                --read-name "$read_name"
+            #end if
+            #if $ReadStrandFilter
+                --read-filter "ReadStrandFilter" 
+                --keep-reverse-strand-only "$keep_reverse_strand_only"
+            #end if
+            #if $ReadTagValueFilter
+                --read-filter "ReadTagValueFilter" 
+                --read-filter-tag "$read_filter_tag"
+                --read-filter-tag-comp "$read_filter_tag_comp"
+            #end if
+            #if $SampleReadFilter
+                --read-filter "SampleReadFilter" 
+                --sample "$sample"
+            #end if
+            #if $SoftClippedReadFilter:
+                --read-filter "SoftClippedReadFilter"
+                --invert-soft-clip-ratio-filter "$invert_soft_clip_ratio_filter"
+                #if $soft_clipped_ratio_threshold
+                    --soft-clipped-ratio-threshold "$soft_clipped_ratio_threshold"
+                #else
+                    --soft-clipped-leading-trailing-ratio "$soft_clipped_leading_trailing_ratio"
+                #end if
+            #end if
+            --disable-tool-default-read-filters "$disable_tool_default_read_filters"
 
-        ##Genomic Intervals
-        #for $interval in $intervals_repeat:
-            --intervals ${interval.L}
-        #end for
-        --interval-padding "$interval_padding"
-        --interval-merging-rule "$interval_merging_rule
-        --only-output-calls-starting-in-intervals "$only_output_calls_starting_in_intervals"
-        
-        ##Penalties & Buffers
-        --cloud-prefetch-buffer '$cloud_prefetch_buffer'
-        #if $cloud_index_prefetch_buffer
-            --cloud-index-prefetch-buffer '$cloud_index_prefetch_buffer'
-        #end if
+            ##Genomic Intervals
+            #for $interval in $intervals_repeat:
+                --intervals ${interval.L}
+            #end for
+            --interval-padding "$interval_padding"
+            --interval-merging-rule "$interval_merging_rule"
+            --only-output-calls-starting-in-intervals "$only_output_calls_starting_in_intervals"
+            
+            ##Penalties & Buffers
+            --cloud-prefetch-buffer "$cloud_prefetch_buffer"
+            #if $cloud_index_prefetch_buffer
+                --cloud-index-prefetch-buffer "$cloud_index_prefetch_buffer"
+            #end if
 
-        ##Alleles
-        #if str($alleles) != "None":
-            --alleles "$alleles"
-        #end if
-        #for $annotation in $annotations_repeat:
-            --annotations ${annotation.A}
-        #end for
-        #for $group in $group_repeat:
-            --annotation-group ${group.G}
-        #end for
-        #for $annotation in $exclude_annotations_repeat:
-            --annotations-to-exclude ${annotation.AX}
-        #end for
-        --max-alternate-alleles "$max_alternate_alleles"
-        --max-genotype-count "$max_genotype_count"
-        --annotate-with-num-discovered-alleles "$annotate_with_num_discovered_alleles"
-        --disable-tool-default-annotations "$disable_tool_default_annotations"
-        --use-new-qual-calculator "$use_new_qual_calculator"
+            ##Alleles
+            #if str($alleles) != "None":
+                --alleles "$alleles"
+            #end if
+            #for $annotation in $annotations_repeat:
+                --annotations ${annotation.A}
+            #end for
+            #for $group in $group_repeat:
+                --annotation-group ${group.G}
+            #end for
+            #for $annotation in $exclude_annotations_repeat:
+                --annotations-to-exclude ${annotation.AX}
+            #end for
+            --max-alternate-alleles "$max_alternate_alleles"
+            --max-genotype-count "$max_genotype_count"
+            --annotate-with-num-discovered-alleles "$annotate_with_num_discovered_alleles"
+            --disable-tool-default-annotations "$disable_tool_default_annotations"
+            --use-new-qual-calculator "$use_new_qual_calculator"
 
-        ##Performance
-        --gcs-max-retries "$gcs_max_retries"
-        --disable-bam-index-caching "$disable_bam_index_caching"
-      #end if
+            ##Performance
+            --gcs-max-retries "$gcs_max_retries"
+            --disable-bam-index-caching "$disable_bam_index_caching"
+        #end if
 
         ]]>
     </command>
     <inputs>
       <conditional name="reference_conditional">
-        <param name="reference_selector" type="select" label="Number of files containing known sites" >
+        <param name="reference_selector" type="select" label="Reference Genome" >
             <option value="File" selected="True">File</option>
             <option value="From Galaxy">From Galaxy</option>
         </param>
@@ -311,10 +291,10 @@
           </section>
           <section name="Variant Calling">
             <param type="data" format="vcf" argument="--dbsnp" label="dbSNP" help="A dbSNP VCF file" optional="True" />
-            <param type="text" argument="--input-prior" label="Input prior for calls" value="[]" help="By default, the prior specified with the argument --heterozygosity/-hets is used for variant discovery at a particular locus, using an infinite sites model" />
+            <!-- <param type="text" argument="-input-prior" label="Input prior for calls" value="[]" help="By default, the prior specified with the argument -heterozygosity/-hets is used for variant discovery at a particular locus, using an infinite sites model" /> -->
             <param type="float" argument="--standard-min-confidence-threshold-for-calling" value="10.0" label="Minimum phred-scaled confidence threshold for calling variants" />
           </section>
-          <section name="Read Filters">
+          <section name="Read Filters" help="Filters to apply in addition to tool-defaults">
             <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters"  >
               <option value="AlignmentAgreesWithHeaderReadFilter" selected="False" />
               <option value="AllowAllReadsReadFilter" selected="False" />
@@ -351,8 +331,6 @@
               <option value="ValidAlignmentStartReadFilter" selected="False" />
               <option value="WellformedFlowBasedReadFilter" selected="False" />
               <option value="WellformedReadFilter" selected="False" />   
-              
-              <!-- Sets the tool default read filters to True (Update when run) -->
             </param>
             <conditional name="AmbiguousBaseReadFilter">
                 <param type="boolean" name="AmbiguousBaseReadFilter" truevalue="Yes" falsevalue="No" label="Ambiguous Base Read Filter" />
@@ -510,9 +488,10 @@
                     </when>
                     <when value="No" />
             </conditional>
+            <param type="boolean" argument="--disable-tool-default-read-filters" checked="False" />
           </section>
           <section name="Genomic Intervals">
-            <repeat argument="--intervals" label="Genomic interval over which to operate" help="-L">
+            <repeat argument="--intervals" name="intervals_repeat" label="Genomic interval over which to operate" help="-L">
                 <param name="L" type="text" value=""/>
             </repeat>            
             <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>
@@ -528,13 +507,13 @@
           </section>
           <section name="Alleles">
             <param type="data" format="vcf" argument="--alleles" label="Set of alleles to force-call called regardless of evidence" optional="True" />
-            <repeat argument="--annotations" name="annotations_repeat" label="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups. -A" optional="True">
+            <repeat argument="--annotations" name="annotations_repeat" title="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups. -A" optional="True">
                 <param name="A" type="text" value=""/>
             </repeat>  
-            <repeat argument="--annotation-group" name="group_repeat" label="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
+            <repeat argument="--annotation-group" name="group_repeat" title="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
                 <param name="G" type="text" value=""/>
             </repeat>  
-            <repeat argument="--annotations-to-exclude" name="exclude_annotations_repeat" label="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
+            <repeat argument="--annotations-to-exclude" name="exclude_annotations_repeat" title="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
                 <param name="AX" type="text" value=""/>
             </repeat>  
             <param type="integer" argument="--max-alternate-alleles" label="Maximum number of alternate alleles to genotype" value="6" />

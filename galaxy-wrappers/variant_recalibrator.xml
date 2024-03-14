@@ -1,11 +1,9 @@
 <tool id="gatk4_VariantRecalibrator" name="GATK4 VariantRecalibrator" version="1.0.0">
     <description>- Build a recalibration model to score variant quality for filtering purposes</description>
-    <requirements>
-      <requirement type="package" version="4.5.0.0">gatk4</requirement>
-    </requirements>
     <macros>
       <import>macros.xml</import>
     </macros>
+    <expand macro="requirements" />
     <command detect_errors="exit_code">
     <![CDATA[
         ##Fix to run on arm macbook
@@ -32,8 +30,8 @@
         #end if
 
         #for $i, $file in enumerate($variant_repeat):
-            bgzip -c ${file.VCF} > '${i}.gz' &&
-            tabix -p vcf '${i}.gz' &&
+            bgzip -c ${file.VCF} > "${i}.gz" &&
+            tabix -p vcf "${i}.gz" &&
         #end for
 
         #for $i, $resource in enumerate($resource_repeat):
@@ -58,12 +56,12 @@
         #if str($gatk_params.gatk_params_selector) == "advanced"
             ##Input Validation
             --read-validation-stringency "$read_validation_stringency"
-            --disable-sequence-dictionary-validation '$disable_sequence_dictionary_validation'
-            --lenient '$lenient'
+            --disable-sequence-dictionary-validation "$disable_sequence_dictionary_validation"
+            --lenient "$lenient"
 
             ##Genomic Intervals
             #for $i, $interval in enumerate($exclude_intervals_repeat):
-                --exclude-intervals '${interval.XL}'
+                --exclude-intervals "${interval.XL}"
             #end for
             #if str($exclude_intervals_file) != "None"
                 --exclude-intervals "$exclude_intervals_file"
@@ -72,8 +70,8 @@
             --interval-set-rule "$interval_set_rule"
 
             ##Performance
-            --use-jdk-deflater '$use_jdk_deflater'
-            --use-jdk-inflater '$use_jdk_inflater'
+            --use-jdk-deflater "$use_jdk_deflater"
+            --use-jdk-inflater "$use_jdk_inflater"
 
             ##Macro Files
             #if str($gatk_config_file) != "None":
@@ -106,10 +104,8 @@
 
             ##Input Validation
             --ignore-all-filters "$ignore_all_filters"
-            --disable-sequence-dictionary-validation "$disable_sequence_dictionary_validation"
 
             ## Read Filters
-            --disable-tool-default-read-filters
             #for $filter in $tool_filters:
                 --read-filter "$filter"
             #end for
@@ -121,17 +117,14 @@
                     --ambig-filter-bases "$ambig_filter_bases"
                 #end if
             #end if
-
             #if $ExcessiveEndClippedReadFilter
                 --read-filter "ExcessiveEndClippedReadFilter" 
                 --max-clipped-bases "$max_clipped_bases"
             #end if
-
             #if $FlowBasedTPAttributeValidReadFilter
                 --read-filter "FlowBasedTPAttributeValidReadFilter" 
                 --read-filter-max-hmer "$read_filter_max_hmer"
             #end if
-
             #if $FragmentLengthReadFilter
                 --read-filter "FragmentLengthReadFilter" 
                 #if $max_fragment_length
@@ -141,22 +134,18 @@
                     --min-fragment-length "$min_fragment_length"
                 #end if
             #end if
-
             #if $IntervalOverlapReadFilter
                 --read-filter "IntervalOverlapReadFilter" 
                 --keep-intervals "$keep_intervals"
             #end if
-
             #if $JexlExpressionReadTagValueFilter
                 --read-filter "JexlExpressionReadTagValueFilter" 
                 --read-filter-expression "$read_filter_expression"
             #end if
-
             #if $LibraryReadFilter
                 --read-filter "LibraryReadFilter" 
                 --library "$library"
             #end if
-
             #if $MappingQualityReadFilter
                 --read-filter "MappingQualityReadFilter" 
                 #if $minimum_mapping_quality
@@ -166,38 +155,31 @@
                     --maximum-mapping-quality "$maximum_mapping_quality"
                 #end if
             #end if
-
             #if $MateDistantReadFilter
                 --read-filter "MateDistantReadFilter" 
                 --mate-too-distant-length "$mate_too_distant_length"
             #end if
-
             #if $OverclippedReadFilter
                 --read-filter "OverclippedReadFilter" 
                 --filter-too-short "$filter_too_short"
                 --dont-require-soft-clips-both-ends "$dont_require_soft_clips_both_ends"
             #end if
-
             #if $PlatformReadFilter
                 --read-filter "PlatformReadFilter" 
                 --platform-filter-name "$platform_filter_name"
             #end if
-
             #if $PlatformUnitReadFilter
                 --read-filter "PlatformUnitReadFilter" 
                 --black-listed-lanes "$black_listed_lanes"
             #end if
-
             #if $ReadGroupBlackListReadFilter
                 --read-filter "ReadGroupBlackListReadFilter" 
                 --read-group-black-list "$read_group_black_list"
             #end if
-
             #if $ReadGroupReadFilter
                 --read-filter "ReadGroupReadFilter" 
                 --keep-read-group "$keep_read_group"
             #end if
-
             #if $ReadLengthReadFilter
                 --read-filter "ReadLengthReadFilter" 
                 --max-read-length "$max_read_length"
@@ -205,28 +187,23 @@
                     --min-read-length "$min_read_length"
                 #end if
             #end if
-
             #if $ReadNameReadFilter
                 --read-filter "ReadNameReadFilter" 
                 --read-name "$read_name"
             #end if
-
             #if $ReadStrandFilter
                 --read-filter "ReadStrandFilter" 
                 --keep-reverse-strand-only "$keep_reverse_strand_only"
             #end if
-
             #if $ReadTagValueFilter
                 --read-filter "ReadTagValueFilter" 
                 --read-filter-tag "$read_filter_tag"
                 --read-filter-tag-comp "$read_filter_tag_comp"
             #end if
-
             #if $SampleReadFilter
                 --read-filter "SampleReadFilter" 
                 --sample "$sample"
             #end if
-
             #if $SoftClippedReadFilter:
                 --read-filter "SoftClippedReadFilter"
                 --invert-soft-clip-ratio-filter "$invert_soft_clip_ratio_filter"
@@ -236,6 +213,7 @@
                     --soft-clipped-leading-trailing-ratio "$soft_clipped_leading_trailing_ratio"
                 #end if
             #end if
+            --disable-tool-default-read-filters "$disable_tool_default_read_filters"
 
             ##Statistics Constants
             --target-titv "$target_titv"
@@ -252,30 +230,32 @@
             --maximum-training-variants "$maximum_training_variants"
             --minimum-bad-variants "$minimum_bad_variants"
             --mq-cap-for-logit-jitter-transform "$mq_cap_for_logit_jitter_transform"
-            #set $tranche_list = $truth_sensitivity_tranche.replace('[', '').replace(']', '').replace(' ', '').split(",")
+            #set $tranche_list = $truth_sensitivity_tranche.replace("[", "").replace("]", "").replace(" ", "").split(",")
             #for $number in $tranche_list:
-                 --truth-sensitivity-tranche '$number'
+                 --truth-sensitivity-tranche "$number"
             #end for
             --use-allele-specific-annotations "$use_allele_specific_annotations"
             --trust-all-polymorphic "$trust_all_polymorphic"
 
             ##Genomic Intervals
             #for $i, $interval in enumerate($intervals_repeat):
-                --intervals '${interval.L}'
+                --intervals "${interval.L}"
             #end for
             --interval-padding "$interval_padding"
             --interval-merging-rule "$interval_merging_rule"
 
             ##Penalties & Buffers
-            --cloud-prefetch-buffer '$cloud_prefetch_buffer'
+            --cloud-prefetch-buffer "$cloud_prefetch_buffer"
             #if $cloud_index_prefetch_buffer
-                --cloud-index-prefetch-buffer '$cloud_index_prefetch_buffer'
+                --cloud-index-prefetch-buffer "$cloud_index_prefetch_buffer"
             #end if
 
             ##Performance
             --gcs-max-retries "$gcs_max_retries"
             --disable-bam-index-caching "$disable_bam_index_caching"
-            --gcs-project-for-requester-pays "$gcs_project_for_requester_pays"
+            #if $gcs_project_for_requester_pays != "":
+                --gcs-project-for-requester-pays "$gcs_project_for_requester_pays"
+            #end if
 
             ##Outputs
             #if $rscript_file
@@ -289,10 +269,10 @@
     ]]>
     </command>
     <inputs>
-        <repeat argument="--variant" name="variant_repeat" label="Variant files" help="A VCF file containing variants" default="1" >
+        <repeat argument="--variant" name="variant_repeat" title="Variant files" help="A VCF file containing variants" default="1" >
             <param name="VCF" type="data" format="vcf" />
         </repeat>
-        <repeat argument="--resource" name="resource_repeat" label="Resource Sequences" help="" default="1">
+        <repeat argument="--resource" name="resource_repeat" title="Resource Sequences" help="" default="1">
             <param type="select" name="type" label="Resource Sequence" >
                 <option value="hapmap">hapmap</option>
                 <option value="omni">omni</option>
@@ -305,7 +285,7 @@
             <param type="float" name="prior" label="Prior" />
             <param name="GVCF" type="data" format="vcf" />
         </repeat>    
-        <repeat argument="--annotations" name="annotations_repeat" label="Annotations to add to variant calls" help="" default="1">
+        <repeat argument="--annotations" name="annotations_repeat" title="Annotations to add to variant calls" help="" default="1">
             <param name="A" type="text" value="" />
         </repeat>  
 
@@ -348,45 +328,43 @@
                 <section name="Input Validation">
                     <param type="boolean" argument="--ignore-all-filters" label="Ignore all input filters" checked="False" />
                 </section>
-                <section name="Read Filters">
+                <section name="Read Filters" help="Filters to apply in addition to tool-defaults">
                     <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters"  >
-                    <option value="AlignmentAgreesWithHeaderReadFilter" selected="False" />
-                    <option value="AllowAllReadsReadFilter" selected="False" />
-                    <option value="CigarContainsNoNOperator" selected="False" />
-                    <option value="FirstOfPairReadFilter" selected="False" />
-                    <option value="FlowBasedTPAttributeSymetricReadFilter" selected="False" />
-                    <option value="GoodCigarReadFilter" selected="False" />
-                    <option value="HasReadGroupReadFilter" selected="False" />
-                    <option value="HmerQualitySymetricReadFilter" selected="False" />
-                    <option value="MappedReadFilter" selected="False" />
-                    <option value="MappingQualityAvailableReadFilter" selected="False" />
-                    <option value="MappingQualityNotZeroReadFilter" selected="False" />
-                    <option value="MatchingBasesAndQualsReadFilter" selected="False" />
-                    <option value="MateDifferentStrandReadFilter" selected="False" />
-                    <option value="MateOnSameContigOrNoMappedMateReadFilter" selected="False" />   
-                    <option value="MateUnmappedAndUnmappedReadFilter" selected="False" />
-                    <option value="MetricsReadFilter" selected="False" />
-                    <option value="NonChimericOriginalAlignmentReadFilter" selected="False" />
-                    <option value="NonZeroFragmentLengthReadFilter" selected="False" />
-                    <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="False" />
-                    <option value="NotDuplicateReadFilter" selected="False" />
-                    <option value="NotProperlyPairedReadFilter" selected="False" />
-                    <option value="NotSecondaryAlignmentReadFilter" selected="False" />   
-                    <option value="NotSupplementaryAlignmentReadFilter" selected="False" />
-                    <option value="PairedReadFilter" selected="False" />
-                    <option value="PassesVendorQualityCheckReadFilter" selected="False" />
-                    <option value="PrimaryLineReadFilter" selected="False" />
-                    <option value="ProperlyPairedReadFilter" selected="False" />   
-                    <option value="ReadGroupHasFlowOrderReadFilter" selected="False" />
-                    <option value="ReadLengthEqualsCigarLengthReadFilter" selected="False" />
-                    <option value="SecondOfPairReadFilter" selected="False" />
-                    <option value="SeqIsStoredReadFilter" selected="False" />
-                    <option value="ValidAlignmentEndReadFilter" selected="False" />
-                    <option value="ValidAlignmentStartReadFilter" selected="False" />
-                    <option value="WellformedFlowBasedReadFilter" selected="False" />
-                    <option value="WellformedReadFilter" selected="False" />   
-                    
-                    <!-- Sets the tool default read filters to True (Update when run) -->
+                        <option value="AlignmentAgreesWithHeaderReadFilter" selected="False" />
+                        <option value="AllowAllReadsReadFilter" selected="False" />
+                        <option value="CigarContainsNoNOperator" selected="False" />
+                        <option value="FirstOfPairReadFilter" selected="False" />
+                        <option value="FlowBasedTPAttributeSymetricReadFilter" selected="False" />
+                        <option value="GoodCigarReadFilter" selected="False" />
+                        <option value="HasReadGroupReadFilter" selected="False" />
+                        <option value="HmerQualitySymetricReadFilter" selected="False" />
+                        <option value="MappedReadFilter" selected="False" />
+                        <option value="MappingQualityAvailableReadFilter" selected="False" />
+                        <option value="MappingQualityNotZeroReadFilter" selected="False" />
+                        <option value="MatchingBasesAndQualsReadFilter" selected="False" />
+                        <option value="MateDifferentStrandReadFilter" selected="False" />
+                        <option value="MateOnSameContigOrNoMappedMateReadFilter" selected="False" />   
+                        <option value="MateUnmappedAndUnmappedReadFilter" selected="False" />
+                        <option value="MetricsReadFilter" selected="False" />
+                        <option value="NonChimericOriginalAlignmentReadFilter" selected="False" />
+                        <option value="NonZeroFragmentLengthReadFilter" selected="False" />
+                        <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="False" />
+                        <option value="NotDuplicateReadFilter" selected="False" />
+                        <option value="NotProperlyPairedReadFilter" selected="False" />
+                        <option value="NotSecondaryAlignmentReadFilter" selected="False" />   
+                        <option value="NotSupplementaryAlignmentReadFilter" selected="False" />
+                        <option value="PairedReadFilter" selected="False" />
+                        <option value="PassesVendorQualityCheckReadFilter" selected="False" />
+                        <option value="PrimaryLineReadFilter" selected="False" />
+                        <option value="ProperlyPairedReadFilter" selected="False" />   
+                        <option value="ReadGroupHasFlowOrderReadFilter" selected="False" />
+                        <option value="ReadLengthEqualsCigarLengthReadFilter" selected="False" />
+                        <option value="SecondOfPairReadFilter" selected="False" />
+                        <option value="SeqIsStoredReadFilter" selected="False" />
+                        <option value="ValidAlignmentEndReadFilter" selected="False" />
+                        <option value="ValidAlignmentStartReadFilter" selected="False" />
+                        <option value="WellformedFlowBasedReadFilter" selected="False" />
+                        <option value="WellformedReadFilter" selected="False" />   
                     </param>
                     <conditional name="AmbiguousBaseReadFilter">
                         <param type="boolean" name="AmbiguousBaseReadFilter" truevalue="Yes" falsevalue="No" label="Ambiguous Base Read Filter" />
@@ -544,6 +522,7 @@
                             </when>
                             <when value="No" />
                     </conditional>
+                    <param type="boolean" argument="--disable-tool-default-read-filters" checked="False" />
                 </section>
                 <section name="Statistics Constants">
                     <param type="float" argument="--target-titv" label="Expected Ti/Tv ratio" value="2.15" help="For calculating FDR tranches and optimization curve output figures" />
@@ -565,7 +544,7 @@
                     <param type="boolean" argument="--trust-all-polymorphic" label="Trust that training sets only contain polymorphic sites" checked="False" help="Enabling greatly speeds up computation" />
                 </section>
                 <section name="Genomic Intervals">
-                    <repeat argument="--intervals" name="intervals_repeat" label="Genomic interval over which to operate" help="-L">
+                    <repeat argument="--intervals" name="intervals_repeat" title="Genomic interval over which to operate" help="-L">
                         <param name="L" type="text" value="" />
                     </repeat>
                     <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, '-L 1:100' with a padding value of 20 would turn into '-L 1:80-120'."/>

@@ -1,11 +1,9 @@
 <tool id="gatk4_HaplotypeCaller" name="GATK4 HaplotypeCaller" version="1.0.0">
     <description>- Call germline SNPs and indels via local re-assembly of haplotypes</description>
-    <requirements>
-        <requirement type="package" version="4.5.0.0">gatk4</requirement>
-    </requirements>
     <macros>
         <import>macros.xml</import>
     </macros>
+    <expand macro="requirements" />
     <command detect_errors="exit_code">
     <![CDATA[
     ln -s "$BAM" bamfile.bam &&
@@ -83,11 +81,9 @@
         --standard-min-confidence-threshold-for-calling "$standard_min_confidence_threshold_for_calling"
 
         ## Read Filters
-        --disable-tool-default-read-filters
         #for $filter in $tool_filters:
             --read-filter "$filter"
         #end for
-
         #if $AmbiguousBaseReadFilter:
             --read-filter "AmbiguousBaseReadFilter"
             #if $ambig_filter_frac
@@ -96,17 +92,14 @@
                 --ambig-filter-bases "$ambig_filter_bases"
             #end if
         #end if
-
         #if $ExcessiveEndClippedReadFilter
             --read-filter "ExcessiveEndClippedReadFilter" 
             --max-clipped-bases "$max_clipped_bases"
         #end if
-
         #if $FlowBasedTPAttributeValidReadFilter
             --read-filter "FlowBasedTPAttributeValidReadFilter" 
             --read-filter-max-hmer "$read_filter_max_hmer"
         #end if
-
         #if $FragmentLengthReadFilter
             --read-filter "FragmentLengthReadFilter" 
             #if $max_fragment_length
@@ -116,22 +109,18 @@
                 --min-fragment-length "$min_fragment_length"
             #end if
         #end if
-
         #if $IntervalOverlapReadFilter
             --read-filter "IntervalOverlapReadFilter" 
             --keep-intervals "$keep_intervals"
         #end if
-
         #if $JexlExpressionReadTagValueFilter
             --read-filter "JexlExpressionReadTagValueFilter" 
             --read-filter-expression "$read_filter_expression"
         #end if
-
         #if $LibraryReadFilter
             --read-filter "LibraryReadFilter" 
             --library "$library"
         #end if
-
         #if $MappingQualityReadFilter
             --read-filter "MappingQualityReadFilter" 
             #if $minimum_mapping_quality
@@ -141,38 +130,31 @@
                 --maximum-mapping-quality "$maximum_mapping_quality"
             #end if
         #end if
-
         #if $MateDistantReadFilter
             --read-filter "MateDistantReadFilter" 
             --mate-too-distant-length "$mate_too_distant_length"
         #end if
-
         #if $OverclippedReadFilter
             --read-filter "OverclippedReadFilter" 
             --filter-too-short "$filter_too_short"
             --dont-require-soft-clips-both-ends "$dont_require_soft_clips_both_ends"
         #end if
-
         #if $PlatformReadFilter
             --read-filter "PlatformReadFilter" 
             --platform-filter-name "$platform_filter_name"
         #end if
-
         #if $PlatformUnitReadFilter
             --read-filter "PlatformUnitReadFilter" 
             --black-listed-lanes "$black_listed_lanes"
         #end if
-
         #if $ReadGroupBlackListReadFilter
             --read-filter "ReadGroupBlackListReadFilter" 
             --read-group-black-list "$read_group_black_list"
         #end if
-
         #if $ReadGroupReadFilter
             --read-filter "ReadGroupReadFilter" 
             --keep-read-group "$keep_read_group"
         #end if
-
         #if $ReadLengthReadFilter
             --read-filter "ReadLengthReadFilter" 
             --max-read-length "$max_read_length"
@@ -180,28 +162,23 @@
                 --min-read-length "$min_read_length"
             #end if
         #end if
-
         #if $ReadNameReadFilter
             --read-filter "ReadNameReadFilter" 
             --read-name "$read_name"
         #end if
-
         #if $ReadStrandFilter
             --read-filter "ReadStrandFilter" 
             --keep-reverse-strand-only "$keep_reverse_strand_only"
         #end if
-
         #if $ReadTagValueFilter
             --read-filter "ReadTagValueFilter" 
             --read-filter-tag "$read_filter_tag"
             --read-filter-tag-comp "$read_filter_tag_comp"
         #end if
-
         #if $SampleReadFilter
             --read-filter "SampleReadFilter" 
             --sample "$sample"
         #end if
-
         #if $SoftClippedReadFilter:
             --read-filter "SoftClippedReadFilter"
             --invert-soft-clip-ratio-filter "$invert_soft_clip_ratio_filter"
@@ -211,6 +188,7 @@
                 --soft-clipped-leading-trailing-ratio "$soft_clipped_leading_trailing_ratio"
             #end if
         #end if
+        --disable-tool-default-read-filters "$disable_tool_default_read_filters"
 
         ## Genomic Intervals
         #for $interval in $intervals_repeat:
@@ -261,6 +239,10 @@
         --sites-only-vcf-output "$sites_only_vcf_output"
         #if $assembly_region_out
             --assembly-region-out "$ASSEMBLY_REGION_OUTPUT"
+        #end if
+        #if $bam_output
+            --bam-output "$BAM_OUTPUT"
+            --bam-writer-type "$bam_writer_type"
         #end if
     #end if
 
@@ -368,7 +350,7 @@
                 <param type="data" format="vcf" argument="--dbsnp" label="dbSNP" help="A dbSNP VCF file" optional="True" />
                 <param type="float" argument="--standard-min-confidence-threshold-for-calling" label="The minimum phred-scaled confidence for calling variants" value="30.0" />
             </section>
-            <section name="Read Filters">
+            <section name="Read Filters" help="Filters to apply in addition to tool-defaults">
                     <param name="tool_filters" type="select" multiple="True" display="checkboxes" label="Default read filters"  >
                         <option value="AlignmentAgreesWithHeaderReadFilter" selected="False" />
                         <option value="AllowAllReadsReadFilter" selected="False" />
@@ -405,17 +387,6 @@
                         <option value="ValidAlignmentStartReadFilter" selected="False" />
                         <option value="WellformedFlowBasedReadFilter" selected="False" />
                         <option value="WellformedReadFilter" selected="False" />   
-                        
-                        <!-- Sets the tool default read filters to True -->
-                        <option value="NotSecondaryAlignmentReadFilter" selected="True"/>
-                        <option value="GoodCigarReadFilter" selected="True"/>
-                        <option value="NonZeroReferenceLengthAlignmentReadFilter" selected="True"/>
-                        <option value="PassesVendorQualityCheckReadFilter" selected="True"/>
-                        <option value="MappedReadFilter" selected="True"/>
-                        <option value="MappingQualityAvailableReadFilter" selected="True"/>
-                        <option value="NotDuplicateReadFilter" selected="True"/>
-                        <option value="MappingQualityReadFilter" selected="True"/>
-                        <option value="WellformedReadFilter" selected="True"/>
                     </param>
                     <conditional name="AmbiguousBaseReadFilter">
                         <param type="boolean" name="AmbiguousBaseReadFilter" truevalue="Yes" falsevalue="No" label="Ambiguous Base Read Filter" />
@@ -573,12 +544,13 @@
                             </when>
                             <when value="No" />
                     </conditional>
+                    <param type="boolean" argument="--disable-tool-default-read-filters" checked="False" />
                 </section>
                 <section name="Genomic Intervals">
-                    <repeat argument="--intervals" name="intervals_repeat" label="Genomic interval over which to operate" help="-L">
+                    <repeat argument="--intervals" name="intervals_repeat" title="Genomic interval over which to operate" help="-L">
                         <param name="L" type="text" value=""/>
                     </repeat>                    
-                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, "-L 1:100" with a padding value of 20 would turn into "-L 1:80-120"."/>
+                    <param type="integer" argument="--interval-padding" label="Amount of padding for each interval (bp)" value="0" help="For example, -L 1:100 with a padding value of 20 would turn into -L 1:80-120."/>
                     <param type="select" argument="--interval-merging-rule" label="Rule for merging abutting intervals">
                         <option value="ALL" selected="True">ALL</option>
                         <option value="OVERLAPPING_ONLY">OVERLAPPING_ONLY</option>
@@ -590,13 +562,13 @@
                 </section>
                 <section name="Alleles">
                     <param type="data" format="vcf" argument="--alleles" label="Set of alleles to force-call called regardless of evidence" optional="True" />
-                    <repeat argument="--annotations"  name="annotations_repeat" label="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups.">
+                    <repeat argument="--annotations"  name="annotations_repeat" title="Annotations to add to variant calls" help="These supplement annotations provided by annotation groups.">
                         <param name="A" type="text" value=""/>
                     </repeat>
-                    <repeat argument="--annotation-group" name="group_repeat" label="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
+                    <repeat argument="--annotation-group" name="group_repeat" title="Annotation groups to add to variant calls" help="Any requirements not met may cause run to fail. -G" optional="True">
                         <param name="G" type="text" value=""/>
                     </repeat>
-                    <repeat argument="--annotations-to-exclude" name="exclude_annotations_repeat" label="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
+                    <repeat argument="--annotations-to-exclude" name="exclude_annotations_repeat" title="Annotations to exclude from variant calls" help="This  has higher priority than the -A or -G arguments. -AX" optional="True">
                         <param name="AX" type="text" value=""/>
                     </repeat>
                     <param type="boolean" argument="--annotate-with-num-discovered-alleles" label="Annotate records with the number of alternate alleles that were discovered" checked="False" />
@@ -622,7 +594,7 @@
                         <option value="EMIT_ALL_CONFIDENT_SITES">EMIT ALL CONFIDENT SITES</option>
                         <option value="EMIT_ALL_ACTIVE_SITES">EMIT ALL ACTIVE SITES</option>
                     </param>
-                    <param type="boolean" argument="--sites-only-vcf-output" label="Don"t emit genotype fields when writing vcf" checked="False"/>
+                    <param type="boolean" argument="--sites-only-vcf-output" label="Don't emit genotype fields when writing vcf" checked="False"/>
                     <param type="boolean" argument="--assembly-region-out" label="Output assembly regions" checked="False" />
                     <param type="boolean" argument="--bam-output" label="Output bam file" />
                     <param type="select" argument="--bam-writer-type" label="Haplotypes written to bam">
@@ -634,7 +606,7 @@
         </conditional>
 
         <conditional name ="advanced_tool_params">
-            <param name="advanced_tool_param_selector" type="select" label="Basic or Advanced Tool options">
+            <param name="advanced_tool_param_selector" type="select" label="Additonal Tool options">
                 <option value="basic" selected="True">Basic</option>
                 <option value="advanced">Advanced</option>
             </param>
@@ -677,10 +649,10 @@
                 <param type="float" argument="--adaptive-pruning-initial-error-rate" value="0.001" />
                 <param type="text" argument="--kmer-size" value="[10, 25]" help="Enter list as if it were a Python list instantiation"/>
                 <param type="text" argument="--gvcf-gq-bands" value="[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 70, 80, 90, 99]" help="Enter list as if it were a Python list instantiation" />
-                <repeat argument="--input-prior" name="prior_repeat" label="Input prior for calls" help="By default, the prior specified with the argument --heterozygosity/-hets is used for variant discovery at a particular locus, using an infinite sites model.">
+                <repeat argument="--input-prior" name="prior_repeat" title="Input prior for calls" help="By default, the prior specified with the argument --heterozygosity/-hets is used for variant discovery at a particular locus, using an infinite sites model.">
                     <param name="prior" label="Prior" type="float" optional="True"/>
                 </repeat>  
-                <repeat argument="--comparison" name="comparison_repeat" label="Comparison VCF files" help="If a call overlaps with a record from the provided comp track, the INFO field will be annotated as such in the output.">
+                <repeat argument="--comparison" name="comparison_repeat" title="Comparison VCF files" help="If a call overlaps with a record from the provided comp track, the INFO field will be annotated as such in the output.">
                     <param name="vcf" label="Comparison File" type="data" format="vcf" optional="True"/>
                 </repeat>  
                 <param type="select" argument="--emit-ref-confidence" label="Mode for emitting reference confidence scores">
@@ -718,6 +690,9 @@
         <data name="OUTPUT" type="data" format="vcf" label="GVCF file"/>
         <data name="ASSEMBLY_REGION_OUTPUT" type="data" format="tabular" label="Assembly Region Out">
             <filter>tool_params["tool_param_selector"] == "advanced" and tool_params["Outputs"]["assembly_region_out"]</filter>
+        </data>
+        <data name="BAM_OUTPUT" type="data" format="bam" label="Haplotype BAM">
+            <filter>tool_params["tool_param_selector"] == "advanced" and tool_params["Outputs"]["bam_output"]</filter>
         </data>
     </outputs>
 
